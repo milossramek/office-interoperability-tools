@@ -1,0 +1,124 @@
+The DoCmp tools are aimed at assessment of interoperability of various office applications using different office document formats.
+ 
+The package has two software parts: 
+1. Conversion and printing of test documents. For this, one needs the bash shell and the Office program to be used in testing - the rest is included in the package. Conversion and printing was tested on Linux and Windows
+
+2. Evaluation and reporting. For this one needs the bash shell, Python with some installed modules and the ImageMagick 'convert' program. This was tested on Linux.
+
+INSTALLATION (both parts)
+-------------------------
+
+Download the docmp package and unpack it somewhere in the file system. Path of the package is to 
+
+On Linux:
+Set environment variables which define applications to be tested on the current system by adding the following lines to the $HOME/.bashrc file and modify them according to the actual situation. Comment out unwanted options or add new ones:
+-----
+# use full paths
+export FTPATH="$HOME/Dokumenty/LO-bugs/FormatyTest/"
+
+# To use Google Docs, get your own key to acces the API
+#export GOOGLEDOC_PK_FILE="$HOME/.ssh/e0cd31d3d0057333ca6eed556fd429152918d65c-privatekey.p12"
+#export GDCONVERT="$FTPATH/gdconvert/gdconvert"
+
+export LO41PROG="/opt/libreoffice4.1/program/soffice"
+
+export LO40PROG="/opt/libreoffice4.0/program/soffice"
+
+export AO34PORT=8134
+export AO34PROG="$FTPATH/DocumentConverter.py"
+export AO34PATH="/opt/openoffice.org3/program"
+
+export AO40PORT=8140
+export AO40PROG="$FTPATH/DocumentConverter.py"
+export AO40PATH="/opt/openoffice4/program"
+
+export AW29PROG="/usr/bin/abiword"
+
+export CW27PROG="/usr/bin/calligrawords"
+
+# these are not required, but may be handy
+function lo40 () { $LO40PROG  $* & }
+function lo41 () { $LO41PROG  $* & }
+function ao34 () { $AO34PATH/soffice  $* & }
+function ao40 () { $AO40PATH/soffice  $* & }
+-----
+
+On Windows:
+Install bash from the CygWin package. 
+Include the following (or similar) to the .bashrc file:
+
+export FTPATH=/cygdrive/e/LO-bugs/FormatyTest
+export MS10PROG=$FTPATH/OfficeConvert/OfficeConvert.exe
+
+Replace MS10 by MS07 or MS13 or anything else.
+You can use only one MSOffice program on one system.
+The OfficeConvert.exe program was taken from http://code.officeshots.org/trac/officeshots/browser/trunk/OfficeConvert. It was recompiled and support for one additional format was added. 
+
+AOO and LO were not tested on Windows. Configuration would be perhaps the same as that listed above.
+
+Comment: If an application can directly print and convert files from a command line, it is listed there directly (LO41PROG), if not, a helper applicatin is listed (AO34PROG, MS10PROG)
+
+Comment: In the tested setup, Windows was installed in a virtual machine with access to the Linux file system. Thus only one instance of software and test files existed, with different configuration files in each system. This saved a lot of work and mess caused by eventual copying of files.
+
+INSTALLATION (evaluation and reporting tools)
+---------------------------------------------
+First install some packages (tested on ubuntu):
+sudo apt-get install python-pip pdftk libimage-exiftool-perl python-numpy imagemagick ipython
+sudo easy_install SimpleITK odfpy
+
+then enter the docmp subdirectory and install the scripts by
+(sudo) pythod setup.py install
+or
+(sudo) pythod setup.py develop
+
+
+SETUP
+-----
+Properties of various office application are defined in the officeconf.sh file.
+Modification is needed only if you add a new application.
+
+The tools require a special directory structure, see the the 'testfiles' subdirectory. If an application should provide 'source' files, it requires its own subdirectory for each test case. A source document should be placed here in the 'native' format of the application. For example:
+testfiles/bullets/LO41/bullets-LO41.odt
+testfiles/bullets/MS13/bullets-MS13.docx
+Applications, which only 'print' documents, do not require their own subdirectory, as for example abiword.
+The source documents for different application need not ne exactly the same, as they are never compared.
+
+The configuration file config.sh lists all test cases, tested format and tested applications. See testfiles/config.sh
+
+CONVERSION AND PRINTING
+-----------------------
+
+WARNING: During conversion an printing no instance of LO and AOO can run!!!
+
+The source documents are fist converted to the tested formats and subsequently printed to pdfs. These are then compared. 
+
+If using only one system (eventually with several office applications), conversion and printing can be done by running the dogenall.sh script (without arguments). If using two or more systems (Linux with AO, LO, abiword etc) and Windows1 (MSO10), Windows2 (MS13), then conversion and printing should be run separately:
+On Linux run 'dogenall.sh -c' in the 'testfiles' directory 
+On Windows1 run  dogenall.sh -c 
+On Windows2 run  dogenall.sh (conversion and printing) 
+On Windows1 run  dogenall.sh -p (printing only) 
+On Linux run  dogenall.sh -p 
+
+After this step, in each subdirectory one can find converted and printed files, for example:
+testfiles/bullets/LO40/bullets-LO40.docx (converted)
+testfiles/bullets/LO40/bullets-LO40.docx.LO41.pdf (printed file testfiles/bullets/LO40/bullets-LO40.docx by LO41 to pdf)
+
+GENERATING VIEWS
+The doviews.sh script generates pair views (pdf file) with statistics (csv file) from the pdf files using information in the config.sh file. Three view types are generated:
+doviews.sh -l : page overlays
+doviews.sh -g : page overlays with aligned lines
+Without the  -l or -g swith the program creates side-by-side views (-a: no annotation, -r: order not randomized)
+
+The -c -f -s switches override settings from config.sh. Individual pairs are saved in the 'pdfpair' directory, one can reuse them using the -u switch. The -p switch enforces splitting the csv and pdf output to one file per test case.
+
+GENERATING  A REPORT
+The doeval.py script generates a textual report from the csv file and the printed pdfs:
+doeval csv_files
+It is recommended to run the doviews.sh scrip using the -p switch, so that one csv file is generated for each test case. Then the report will be nicely separated in sections.
+
+MINIMAL SET OF COMMANDS
+Using one system and assuming that everything is properly configured and prepared, the following three commands should be run in the directory with the config.sh file and subdirectories with the source files to generate the report:
+dogenall.sh
+doviews.sh [-l |-q] -p (Several all*.pdf and all*csv files are written)
+doeval [-c] [-l] all*csv (rslt.odt is written)
+

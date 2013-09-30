@@ -1,0 +1,28 @@
+Pouzit odrazky so zodpovedajucou strukturou, font Times new roman
+
+one
+one one 
+one one one
+one one two
+one one three
+one two
+one two one
+one three
+one three one
+two
+two one
+two one one
+two two
+two two one
+two two two
+two two three
+two three
+three
+three one
+three one one
+three two
+three two one
+three three
+three three one
+three three two
+three three three

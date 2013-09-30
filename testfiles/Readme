@@ -1,0 +1,26 @@
+Content of the directory:
+
+the subdirectories bullets, formatting,... contain:
+	- source documents (eg. bullets/LO41/bullets-LO41.odt), 
+	- converted documents (eg. bullets/LO41/bullets-LO41.docx) and 
+	- printed documents (eg. bullets/LO41/bullets-LO41.odt.MS13.pdf). 
+The source documents were created manually, conversion was done by 'dogenall.sh -c' and printing by 'dogenall.sh -p)
+
+The subdirectory 'pdfpairs' contains pair views of the printed source document and printed converted document and were produced by the 'doviews.sh' script
+For example, pair:a:l:200-bullets-LO41-odt-MS13.pdf displays a pair created from 
+the printed source bullets/LO41/bullets-LO41.odt.LO41.pdf and 
+the printed converted document bullets/LO41/bullets-LO41.odt.MS13.pdf
+In the name 
+	a: means that the file is annotated, 
+	l: means that 'doviews -l' was used (page overlay)
+	g: means that 'doviews -g' was used (line overlay) and 
+	200 (dpi) means the used resolution. 
+Except for the files in pdfpair the 'doviews.sh' script produced the pdf and csv files in this directory:
+	all-l* by running 'doviews -l -p -o all-l'
+	all-g* by running 'doviews -g -p -o all-g'
+The all-l*.csv and all-g*.csv contain the same except for different names of pair files in the pdfpair directory (l: and g:)
+These pdfs contain pair views for the given case
+
+The odt reports were created by the 'summaries.sh' script, which call 'doeval.sh'. all-l*odf and all-g*.odt contain identical numeric values, they differ only in links to the pair pdf fime in the pdfpair directory.
+
+
