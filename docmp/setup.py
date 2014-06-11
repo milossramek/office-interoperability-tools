@@ -12,9 +12,8 @@ setup(
 	license = "GPLv3",
 	#data_files = data_files,
 	packages = find_packages(),
-	scripts = ['docompare.py','doeval.py', 'dolib.py', 'odtspant.py', 'dogenall.sh','doviews.sh', 'gdconvert.py'],
+	scripts = ['docompare.py','doeval.py', 'dolib.py', 'dogenall.sh','doviews.sh', 'gdconvert.py'],
 	#install_requires=[
-		#'SimpleITK>=0.6.1',
 		#'numpy>=1.6.1',
 		#'distribute>=0.6.28',
 		#'odfpy>=0.9.6',

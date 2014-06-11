@@ -503,7 +503,7 @@ def showItems(textdoc, text, itemlist):
 #global definitions
 native = {	# native formats
 
-	'LO36':'odt', 'LO40':'odt', 'LO41':'odt', 'OO33':'odt', 'AO40':'odt', 'AO34':'odt',
+		'LO36':'odt', 'LO40':'odt', 'LO41':'odt', 'LO42':'odt', 'OO33':'odt', 'AO40':'odt', 'AO34':'odt',
 	'MS13':'docx', 'MS10':'docx', 'MS07':'docx', }
 progdesc='Derive some results from pdf tests'
 verbose = False

@@ -2,64 +2,50 @@
 # the insimage table and tableadv cases were excluded owing to too poor results (see config.sh)
 
 #Comment: files rslt-l*odt, rslt-g*.odt and rslt-a*.odt have the same contents, they just link to different pair views
+set -o xtrace #be verbose
 
 url="-p http://bender.dam.fmph.uniba.sk/~milos/"
 url=
 
-#
-# reports and pairs with page overviews (the -l switch)
-#
-#doviews.sh -l -p -u -o all-l
-#Reports with links to the pairs with page overlays (the -l switch)
-
 # report for all cases format and applications
-doeval.py -c -o rslt-all-l all-l*.csv
+ostrall="all"
+astralla=
+astrallb=
 
-# create a report for all tested formats, cases and OO33, AO34 AO40 LO40 LO41 and MS13 withe worst line views
-doeval.py -c -l -o rslt-l-OO33-AO34-AO40-LO40-LO41-MS13 -a "OO33 AO34 AO40 LO40 LO41 MS13" all-l*.csv
+# create a report for the OO family and MS
+ostrOOMS="OO33-AO34-AO40-LO40-LO41-LO42-MS13"
+astrOOMSa="-a"
+astrOOMSb="OO33 AO34 AO40 LO40 LO41 LO42 MS13"
 
-# create a report for all tested formats, cases and the newest applications
-doeval.py -c -l -o rslt-l-AO40-LO41-MS13 -a "AO40 LO41 MS13" all-l*.csv
+# create a report for newest applications
+ostrAOLO="AO40-LO41-LO42-MS13" 
+astrAOLOa="-a"
+astrAOLOb="AO40 LO41 LO42 MS13"
 
-# create a report for all tested formats, cases and LO41 an MS13
-doeval.py -c -l -o rslt-l-LO41-MS13 -a "LO41 MS13" all-l*.csv
-rm -f /tmp/*tif
+# create a report for LO41 LO42 an MS13
+ostrLOMS="LO41-LO42-MS13"
+astrLOMSa="-a"
+astrLOMSb="LO41 LO42 MS13"
 
-#
-# reports and pairs with page overviews (the -l switch)
-#
-#doviews.sh -g -p -u -o all-g
-#Reports with links to the pairs with page overlays (the -g switch)
+function testbatch () {
+	ls all$1*.csv
+	doviews.sh $1 -p -u -o all$1
+	#Reports with links to the pairs with page overlays (the -l switch)
 
-# report for all cases format and applications
-doeval.py -c -o rslt-all-g all-g*.csv
+	# all cases format and applications
+	doeval.py $url -c -o rslt-l-$ostrall all$1*.csv
+	# all tested formats, cases and OO33, AO34 AO40 LO40 LO41 and MS13 withe worst line views
+	doeval.py $url -c -o rslt-l-$ostrOOMS $astrOOMSa "$astrOOMSb" all$1*.csv
+	# all tested formats, cases and the newest applications
+	doeval.py $url -c -o rslt-l-$ostrAOLO $astrAOLOa "$astrAOLOb" all$1*.csv
+	# all tested formats, cases and LO41 LO42 an MS13
+	doeval.py $url -c -o rslt-l-$ostrLOMS $astrLOMSa "$astrLOMSb" all$1*.csv
+	rm -f /tmp/*tif
+}
 
-# create a report for all tested formats, cases and OO33, AO34 AO40 LO40 LO41 and MS13 withe worst line views
-doeval.py -c -l -o rslt-g-OO33-AO34-AO40-LO40-LO41-MS13 -a "OO33 AO34 AO40 LO40 LO41 MS13" all-g*.csv
-
-# create a report for all tested formats, cases and the newest applications
-doeval.py -c -l -o rslt-g-AO40-LO41-MS13 -a "AO40 LO41 MS13" all-g*.csv
-
-# create a report for all tested formats, cases and LO41 an MS13
-doeval.py -c -l -o rslt-g-LO41-MS13 -a "LO41 MS13" all-g*.csv
-
-rm -f /tmp/*tif
-
-#
-# reports and pairs with annotated side-by-side (the -a switch)
-#
-#doviews.sh -a -p -u -o all-a
-#Reports with links to the pairs with page overlays (the -a switch)
-
-# report for all cases format and applications
-doeval.py -c -o rslt-all-a all-a*.csv
-
-# create a report for all tested formats, cases and OO33, AO34 AO40 LO40 LO41 and MS13 withe worst line views
-doeval.py -c -l -o rslt-a-OO33-AO34-AO40-LO40-LO41-MS13 -a "OO33 AO34 AO40 LO40 LO41 MS13" all-a*.csv
-
-# create a report for all tested formats, cases and the newest applications
-doeval.py -c -l -o rslt-a-AO40-LO41-MS13 -a "AO40 LO41 MS13" all-a*.csv
-
-# create a report for all tested formats, cases and LO41 an MS13
-doeval.py -c -l -o rslt-a-LO41-MS13 -a "LO41 MS13" all-a*.csv
-rm /tmp/*tif
+# reports and pairs with page overlays (the -l switch)
+testbatch "-l" 
+# reports and pairs with page overlays and aligned rows (the -l switch)
+#testbatch "-g" 
+# reports and pairs with annotated side-by-side views (the -a switch)
+#testbatch "-a" 
