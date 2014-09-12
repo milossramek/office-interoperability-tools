@@ -116,7 +116,7 @@ def genside (img1, img2, height, width, name1, name2, txt1, txt2):
 		#cimg2=annotateImg(cimg2, (0,0,255), 2, (100, 130), txt2)
         cimg = mergeSide(cimg1, cimg2)
 	if annotated:
-	    cimg=annotateImg(cimg, (0,255,0), 2, (400, 130), txt1)
+	    cimg=annotateImg(cimg, (0,255,0), 2, (100, 130), txt1)
         return cimg
 
 def genoverlay(img1, title, name1, name2, stattxt, img2=None):
@@ -177,15 +177,16 @@ def usage(desc):
 	#print "\t-fp ............... use only the first page {default: all pages}"
 	print "\t-d ................ resolution of the converted pdf documen {default: "+str(dpi)+"}"
 	print "\t-a ................ annotate each page with file name {default: no annotation}"
-	print "\t-l ................ create overlayed unaligned images {default: side-by-side placement}"
-	print "\t-g ................ create overlayed row-aligned images {default: side-by-side placement}"
+	print "\t-s ................ side-byside pages {default: side-by-side pages}"
+	print "\t-p ................ create page overlay images {default: side-by-side pages}"
+	print "\t-l ................ create line aligned overlay images {default: side-by-side pages}"
 	print "\t-v ................ be verbose"
 	print "\t-h ................ this usage"
 
 def parsecmd(desc):
 	global verbose, dpi, Names, annotated, overlayed, outfile, rowaligned
 	try:
-		opts, Names = getopt.getopt(sys.argv[1:], "hvalgo:d:", ["help", "verbose"])
+		opts, Names = getopt.getopt(sys.argv[1:], "hvalpso:d:", ["help", "verbose"])
 	except getopt.GetoptError as err:
 		# print help information and exit:
 		print str(err) # will print something like "option -a not recognized"
@@ -199,12 +200,13 @@ def parsecmd(desc):
 			sys.exit()
 		elif o in ("-a"):
 			annotated = True
-		elif o in ("-l"):
-			annotated = True
+		elif o in ("-s"):
+			overlayed = False
+			rowaligned = False
+		elif o in ("-p"):
 			overlayed = True
-		elif o in ("-g"):
+		elif o in ("-l"):
 			rowaligned = True
-			annotated = True
 		elif o in ("-o"):
 			outfile = a
 		elif o in ("-d"):

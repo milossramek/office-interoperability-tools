@@ -12,7 +12,6 @@
 
 fp=""
 outname=all
-randomize="-R"
 split=0
 exsame=0
 fdir="pdfpairs"
@@ -22,17 +21,13 @@ reuse=0
 
 function usage
 {
-	echo "$0: create anonymized and randomized views for interoperability testing " 1>&2
-	echo "	Views are by default saved in '$outname.pdf'" 1>&2
+	echo "$0: create views for interoperability testing of text documents " 1>&2
+	echo "	Views are by default saved in '$outname-x.pdf'" 1>&2
 	echo "	Description of types and ordering is by default saved in '$outname.csv'" 1>&2
 	echo "	Configuration of to-be-tested cases specified in 'config.sh'" 1>&2
 	echo "Usage: $0 [switches] " 1>&2
 	echo "Switches:" 1>&2
-	echo "    -l  ............... create overlayed images {default: side-by-side placement}" 1>&2 
-	echo "    -g  ............... create row-aligned overlayed images {default: side-by-side placement}" 1>&2 
-	echo "    -a  ............... annotate each page with file name {default: test number}" 1>&2 
-	echo "    -r ................ not randomized order {default: randomized}" 1>&2 
-	echo "    -u ............... reuse previous temporary files {default: create new files}" 1>&2 
+	echo "    -u . .............. reuse previous temporary files {default: create new files}" 1>&2 
 	#echo "    -fp ............... use only the first page {default: all pages}" 1>&2 
 	echo "    -x ................ exclude files of the same family (LO, MS),...) {default: all}" 1>&2 
 	echo "    -s APP ............ print only for the APP application(s) {default: as specified in config.sh}" 1>&2 
@@ -45,9 +40,28 @@ function usage
 	exit 1
 }
 
+function createpair
+{
+	if [ "$reuse" -eq 1 ]
+	then
+		if [ ! -e $1 ]
+		then
+			echo Creating $1
+			docompare.py -a $2 -d $dpi $fp -o $1 $srcfile $l
+		else
+			echo Using cached $1
+		fi
+	else
+		echo Creating $1
+		docompare.py -a $2 -d $dpi $fp -o $1 $srcfile $l
+	fi
+}
+
 function genpairs 
 {
-	pairlist=
+	pairlists=
+	pairlistp=
+	pairlistl=
 	for d in $1; do 
 		#first create a list of files to compare
 		for s in $printapps; do #source app
@@ -75,24 +89,17 @@ function genpairs
 					tgt="${f2##*.}"
 					f3="${f2%.*}"
 					fmt="${f3##*.}"
-					pairname=$fview-$d-$s-$fmt-$tgt.pdf
-					
-					# does the pair pdf already exist:
-					#fff=`find $fdir -name $pairname\*.pdf`
-					if [ "$reuse" -eq 1 ]
-					then
-						if [ ! -e $pairname ]
-						then
-							echo Creating $pairname
-							docompare.py -d $dpi $fp $overlay $rowalign $annotate -o $pairname $srcfile $l
-						else
-							echo Using cached $pairname
-						fi
-					else
-						echo Creating $pairname
-						docompare.py -d $dpi $fp $overlay $rowalign $annotate -o $pairname $srcfile $l
-					fi
-					pairlist="$pairlist $pairname"
+
+					pairname=$d-$s-$fmt-$tgt.pdf
+					#side-by-side
+					createpair "$fview-s-$pairname" "-s"
+					pairlists="$pairlists $fview-s-$pairname"
+					#page overlays
+					createpair "$fview-p-$pairname" "-p"
+					pairlistp="$pairlistp $fview-p-$pairname"
+					#line aligned overlays
+					createpair "$fview-l-$pairname" "-l"
+					pairlistl="$pairlistl $fview-l-$pairname"
 				done
 			fi
 		done
@@ -112,22 +119,14 @@ function sel2
 
 function gensummary
 {
-	#rm -f $aview-*.pdf
 
-	#randomize:
-	rm -rf ttmptmp
-	for i in $pairlist; do echo $i >>ttmptmp; done
-	pdfs=`sort $randomize ttmptmp`
-	rm -rf ttmptmp
- 
 	#get index description from one pair view file
-	ef=`echo ${pdfs}|cut -d " " -f 1`
+	ef=`echo ${pairlists}|cut -d " " -f 1`
 	t=`exiftool -Custom1 $ef`
-	#pdfs=`echo $pairlist | sort $randomize`
-	echo "Randomization and annotation of the generated views " 1>&2
+	echo "Extracting statisctics from pdf files" 1>&2
 	echo "View number,View pair file,Test case,Format, Source app,Target app,$idesc">$1.csv
 	i=1
-	for f  in $pdfs;
+	for f  in $pairlists;
 	do
 		b=`basename $f .pdf`
 		info="$i,$f,`sel1 $b 2`,`sel1 $b 4`,`sel1 $b 3`,`sel1 $b 5`"
@@ -153,35 +152,14 @@ function gensummary
 			then
 				zz=0$zz
 			fi
-			# 'convert -annotate' not working, so skip it here 
-			#if [ "$annotate" ] 
-			if [ "1" ] 
-			then
-				#echo a
-				#convert $f $aview-$zz$i.pdf
-				cp $f $aview-$zz$i.pdf
-			else 
-				#echo b
-				if [ $dpi -lt 150 ] 
-				then
-					convert -fill blue -pointsize 50 -annotate +300+60 "Original" -annotate +1200+60 "Test $i" $f $aview-$zz$i.pdf
-				elif [ $dpi -lt 250 ] 
-				then
-					convert -fill blue -pointsize 75 -annotate +450+90 "Original" -annotate +2200+90 "Test $i" $f $aview-$zz$i.pdf
-				else
-					convert -fill blue -pointsize 100 -annotate +600+120 "Original" -annotate +3200+120 "Test $i" $f $aview-$zz$i.pdf
-				fi
-			fi
 		else
 			echo $info "," "File Missing" 1>&2
 		fi
 		let i=i+1
 	done
-	pdftk $aview-*.pdf output $1.pdf
 	echo "Views writen to '$1.pdf'" 1>&2
 	echo "Description of types and ordering written to '$1.csv'" 1>&2
 }
-
 
 
 if [ ! -e "config.sh" ]
@@ -201,24 +179,11 @@ do
 			usage
 			shift
 			;;
-		-l*)
-			overlay="-l"
-			annotate="-a"
-			randomize=
-			shift
-			;;
-		-g*)
-			rowalign="-g"
-			annotate="-a"
-			randomize=
-			shift
-			;;
 		-u*)
 			reuse=1
 			shift
 			;;
 		-r*)
-			randomize=
 			shift
 			;;
 		-p*)
@@ -230,7 +195,6 @@ do
 			shift
 			;;
 		-a*)
-			annotate="-a"
 			shift
 			;;
 		-d)
@@ -275,30 +239,14 @@ echo "Formats: $formats" 1>&2
 echo "Source Applications: $sourceapps" 1>&2
 echo "Print Applications: $printapps" 1>&2
 
-#fview="$fdir/pair$annotate$overlay$rowalign-$dpi"
 fview=$fdir/pair
-if [ $annotate ]
-then
-	fview=$fview:a
-fi
-if [ $overlay ]
-then
-	fview=$fview:l
-fi
-if [ $rowalign ]
-then
-	fview=$fview:g
-fi
 fview=$fview:$dpi
-
-aview=$fdir/aview
 
 if [ ! -d $fdir ] 
 then
 	mkdir $fdir
 fi
 
-#echo Params: $fview $overlay $annotate $rowalign
 if [ "$split" -eq "1" ]
 then
 	for d in $cases; do 
@@ -310,6 +258,9 @@ then
 	done
 else
 	genpairs "$cases" "$formats"
+	pdftk $pairlists output $outname-s.pdf
+	pdftk $pairlistp output $outname-p.pdf
+	pdftk $pairlistl output $outname-l.pdf
 	gensummary $outname
 fi
 
