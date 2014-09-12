@@ -74,6 +74,7 @@ def loadCSV(csvfile):
 		reader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONE)
 		values = {}
 		for row in reader:
+			#ipdb.set_trace()
 			if(reader.line_num == 1): 
 				h = [row[i].strip() for i in range(len(row))]
 				#strip the trailing empty items
@@ -85,7 +86,7 @@ def loadCSV(csvfile):
 				case = row[h.index('Test case')].strip()
 				fmt = row[h.index('Format')].strip()
 				pair = row[h.index('View pair file')].strip()
-				#find th efirst empty field
+				#find the first empty field
 				if(len(row) < hlen):
 					values[(row[h.index('Source app')].strip(),row[h.index('Target app')].strip())] = None
 				else:
@@ -545,11 +546,11 @@ for fname in Names:
 	#print fname
 	case, fmt, csvhdr, values = loadCSV(fname)
 	rsltTab[(case,fmt)] = {}
-	mdInd = csvhdr.index('max')
-	mdmInd = csvhdr.index('med')
-	phInd = csvhdr.index('PgHeightErr')
-	hsInd = csvhdr.index('HorLnShiftMax')
-	ldInd = csvhdr.index('nLinesDif')
+        #ipdb.set_trace()
+	mdInd = csvhdr.index('FeatureDistanceError[mm]')
+	phInd = csvhdr.index('TextHeightError[mm]')
+	hsInd = csvhdr.index('LinePositionError[mm]')
+	ldInd = csvhdr.index('LineNumDifference')
 	vread = {}	#verified read capability 
 	vwrite = {} 	#verified Write capability
 	# lists for three observed errorr measures

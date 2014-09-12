@@ -117,7 +117,7 @@ then
 					echo "-- Converting $src in $d/$s to '$cvlist' by $s"
 					for i in *.$src; do 
 						for tg in $cvlist; do 
-							#echo conv$s $tg $i; 
+							echo conv$s $tg $i; 
 							conv$s $tg $i; 	# conversion
 						done
 					done

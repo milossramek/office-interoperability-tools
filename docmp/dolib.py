@@ -54,9 +54,9 @@ def pdf2array(pdffile, res):
 	os.system(cmd)
 	img = (sitk.GetArrayFromImage(sitk.ReadImage(tname))).astype(np.uint8)
 	if img.ndim == 3:	# currently we work only with the first page
-		return img[0], tname 
+		return img[0]
 	else:
-		return img, tname
+		return img
 
 	
 def getBBox(img1, img2=None):

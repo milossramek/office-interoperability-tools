@@ -25,6 +25,12 @@ then
 	canprintLO42=1		# we can print to pdf
 fi
 
+if [ -x "$LO43PROG" ]
+then
+	canconvertLO43=1	# we can convert from source type to target types
+	canprintLO43=1		# we can print to pdf
+fi
+
 if [ -e "$OO33PROG" ]		# this is not an executable, so only verify existence
 then
 	canconvertOO33=1	# we can convert from source type to target types
@@ -80,7 +86,15 @@ fi
 
 # application specific definitions
 
-#Libreoffice 4.1
+#Libreoffice 4.3
+#usage: convLO43 docx file.odf #converts the given file to docx
+convLO43() { $LO43PROG --headless --convert-to $1 $2 > /dev/null; }
+sourceLO43() { echo "odt"; }
+targetLO43() { echo "rtf docx doc"; }
+#usage: printLO43 pdf file.rtf #prints the given file to pdf
+printLO43() { $LO43PROG --headless --convert-to pdf $1 > /dev/null; }
+
+#Libreoffice 4.2
 #usage: convLO42 docx file.odf #converts the given file to docx
 convLO42() { $LO42PROG --headless --convert-to $1 $2 > /dev/null; }
 sourceLO42() { echo "odt"; }

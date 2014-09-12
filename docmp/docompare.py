@@ -1,11 +1,10 @@
 # pip install Wand
 #from __future__ import print_function
-import SimpleITK as sitk
 import dolib
 import numpy as np
-import sys, os, tempfile
-import getopt
-import ipdb
+import cv2, Image
+import sys, getopt, os
+import ipdb, idisp
 #from scipy import sparse
 #ipdb.set_trace()
 
@@ -23,7 +22,7 @@ def overlapIndexPage(iarray1, iarray2):
 	#return 2.0* np.sum((itrim1+itrim2) > 1) / (np.sum(itrim1) + np.sum(itrim2))
 	diff = itrim1 != itrim2
 	ovl = 100*(1.0 - float(np.sum(diff)) / (np.sum(itrim2) + np.sum(itrim1)))
-	rslt = '*PgPxOvl[%%]: %2.1f*'%ovl
+        rslt = 'PagePixelOvelayIndex[%%]: %2.1f | '%ovl
 	return rslt
 
 def lineIndexPage(iarray0, iarray1):
@@ -64,30 +63,63 @@ def lineIndexPage(iarray0, iarray1):
 	heightErr = heightErr * (dpi*a4height/i2mm)/float(itrim0.shape[0]+itrim1.shape[0])
 
 	#If changing the rslt format, adjust the gentestviews.sh script accordingly
-	rslt = 'LnPxOvl[%%]: %2.1f*LnMaxDist avg: %2.2f*std: %2.2f*max: %2.1f*med: %2.2f*PgHeightErr: %2.2f*HorLnShiftMax:%2.2f*nLinesDif:%2d'
-	rslt = rslt%(100*np.average(indices[:,1]), px2mm(np.average(indices[:,3])), px2mm(np.std(indices[:,3])), px2mm(np.max(indices[:,3])), px2mm(np.median(indices[:,3])),px2mm(heightErr),px2mm(np.max(indices[:,0])),len(tx1)-len(tx0)) 
-	return 1-newpage, rslt
+	#rslt = 'LnPxOvl[%%]: %2.1f*LnMaxDist avg: %2.2f*std: %2.2f*max: %2.1f*med: %2.2f*PgHeightErr: %2.2f*HorLnShiftMax:%2.2f*nLinesDif:%2d'
+	#rslt = rslt%(100*np.average(indices[:,1]), px2mm(np.average(indices[:,3])), px2mm(np.std(indices[:,3])), px2mm(np.max(indices[:,3])), px2mm(np.median(indices[:,3])),px2mm(heightErr),px2mm(np.max(indices[:,0])),len(tx1)-len(tx0)) 
+        #ipdb.set_trace()
+        linerslt = 'LinePixelOverlayIndex[%%]: %2.1f | FeatureDistanceError[mm]: %2.1f | LinePositionError[mm]: %2.2f |'
+	linerslt = linerslt%(100*np.average(indices[:,1]), px2mm(np.max(indices[:,3])),px2mm(np.max(indices[:,0]))) 
+	pagerslt = ' TextHeightError[mm]: %2.2f | LineNumDifference: %2d'
+	pagerslt = pagerslt%((px2mm(heightErr), len(tx1)-len(tx0)))
 
-def annotateImg(ifile, color, size, geometry, text):
-	cmd = 'convert -fill %s -pointSize %d -annotate %s %s %s %s'
-	cmd = cmd%(color, size, geometry, text, ifile, ifile)
-	os.system(cmd)
+	return 1-newpage, linerslt, pagerslt
 
-def genside (tfile1, tfile2, height, width, name1, name2, txt1, txt2, outfile):
+def annotateImg(img, color, size, position, text):
+    cv2.putText(img, text, position, cv2.FONT_HERSHEY_PLAIN, size, color, thickness = 2)
+    return img
+
+def mergeSide(img1, img2):
+    ''' place two images side-by-side'''
+    offset=10
+    ishape = img1.shape
+    nshape=(img1.shape[0], 2*img1.shape[1]+offset, 3) #shape for numpy
+    big=np.zeros(nshape, dtype=np.uint8)
+    big[:ishape[0],:ishape[1]]=img1
+    big[:ishape[0],ishape[1]+offset:]=img2
+    return big
+
+def genside (img1, img2, height, width, name1, name2, txt1, txt2):
 	"""
 	create a side-by-side view
-	tn1, tn2: images
+	img1, img2: images
 	name1, name2: their names 
 	txt1, txt2: some text
 	"""
+        if len(img1.shape)==2:
+            cimg1 = np.zeros((img1.shape[0], img1.shape[1], 3), dtype=np.uint8)
+            cimg1[...,0] = img1
+            cimg1[...,1] = img1
+            cimg1[...,2] = img1
+        else:
+            cimg1 = img1
+        if len(img2.shape)==2:
+            cimg2 = np.zeros((img2.shape[0], img2.shape[1], 3), dtype=np.uint8)
+            cimg2[...,0] = img2
+            cimg2[...,1] = img2
+            cimg2[...,2] = img2
+        else:
+            cimg2 = img2
 
 	if annotated:
-		annotateImg(tfile1, 'blue', mm2px(4), '+%d+%d'%(mm2px(4),mm2px(4)), '"'+'Source: '+name1+'\n'+txt1+'"')
-		annotateImg(tfile2, 'blue', mm2px(4), '+%d+%d'%(mm2px(4),mm2px(4)), '"'+'Target: '+name2+'\n'+txt2+'"')
-	cmd = 'montage -compress lzw -geometry "%d"x"%d"+1+1 -border 3 %s %s %s'%(width, height, tfile1, tfile2, outfile)
-	os.system(cmd)	
+		cimg1=annotateImg(cimg1, (0,0,255), 2, (100, 70), 'Source: '+name1)
+		#cimg1=annotateImg(cimg1, (0,0,255), 2, (100, 130), txt1)
+		cimg2=annotateImg(cimg2, (0,0,255), 2, (100, 70), 'Target: '+name2)
+		#cimg2=annotateImg(cimg2, (0,0,255), 2, (100, 130), txt2)
+        cimg = mergeSide(cimg1, cimg2)
+	if annotated:
+	    cimg=annotateImg(cimg, (0,255,0), 2, (400, 130), txt1)
+        return cimg
 
-def genoverlay(img1, title, name1, name2, txt, outfile, img2=None):
+def genoverlay(img1, title, name1, name2, stattxt, img2=None):
 	"""
 	create an overlayed view
 	img1, img2: images
@@ -96,33 +128,22 @@ def genoverlay(img1, title, name1, name2, txt, outfile, img2=None):
 	txt: text to print below the title
 	"""
 
-	tn3 = dolib.tmpname()+'.tif'
 	if img2 == None:
-		sitk.WriteImage(sitk.GetImageFromArray(255*(1-img1), isVector=True), tn3)
+		outimg = 255*(1-img1)
 	else:
-		#overlay the images (#2 twice to make it cyan)
-		tn1 = dolib.tmpname()+'.tif'
-		tn2 = dolib.tmpname()+'.tif'
-		sitk.WriteImage(sitk.GetImageFromArray(255*(1-img1)), tn1)
-		sitk.WriteImage(sitk.GetImageFromArray(255*(1-img2)), tn2)
-		#sitk.WriteImage(sitk.GetImageFromArray(img1), tn1)
-		#sitk.WriteImage(sitk.GetImageFromArray(img2), tn2)
-		cmd ='convert -compress lzw  %s %s %s -background white -channel red,green,blue  -combine %s'
-		#cmd ='convert %s %s %s -background white -channel red,green,blue  -combine %s'
-		cmd =cmd%(tn1, tn2, tn2, tn3)
-		os.system(cmd)
-		os.unlink(tn1)
-		os.unlink(tn2)
-
+                outimg=np.zeros((img1.shape[0], img1.shape[1], 3), dtype=np.uint8)
+                outimg[...,0] = (255*(1-img1))
+                outimg[...,1] = (255*(1-img2))
+                outimg[...,2] = (255*(1-img2))
 	if annotated:
-		cmd = 'convert -compress lzw %s -fill blue -pointSize %d -annotate +%d+%d "%s\ncyan: %s\nred: %s\n%s" %s'
-		#cmd = 'convert %s -fill blue -pointSize %d -annotate +%d+%d "%s\ncyan: %s\nred: %s\n%s" %s'
-		cmd = cmd%(tn3, mm2px(3), mm2px(4), mm2px(4), title, name1, name2, txt, outfile)  
-		os.system(cmd)
-	else:
-		os.system('cp %s %s'%(tn3, outfile))
-
-	os.unlink(tn3)
+	        outimg = annotateImg(outimg, (0, 0, 255), 2, (100, 50), title)
+		txt = "cyan: %s"%name1
+	        outimg = annotateImg(outimg, (0, 255, 255), 2, (100, 80), txt)
+		txt = "red: %s"%name2
+	        outimg = annotateImg(outimg, (255, 0, 0), 2, (100, 110), txt)
+		#outimg=annotateImg(outimg, 'blue', mm2px(4), mm2px(4), txt)
+	        outimg = annotateImg(outimg, (0, 0, 255), 1.3, (100, 140), stattxt)
+	return outimg
 
 def mm2px(val):
 	"""
@@ -192,6 +213,7 @@ def parsecmd(desc):
 			assert False, "unhandled option"
 		# ...
 #global definitions
+imagemagickpath="/opt/imagemagick-6.7/bin/"
 a4width=210
 a4height=297
 i2mm=25.4	# inch to mm conversion
@@ -203,14 +225,14 @@ verbose = False
 outfile = "cmp.pdf"
 dpi = 200
 parsecmd(progdesc)
-#ipdb.set_trace()
 if Names == []:
 	usage(progdesc)
 	sys.exit(1)
 
 try:
-	img1, tname1 = dolib.pdf2array(Names[0], dpi)
-	img2, tname2 = dolib.pdf2array(Names[1], dpi)
+	img1 = dolib.pdf2array(Names[0], dpi)
+	img2 = dolib.pdf2array(Names[1], dpi)
+
 
 	#crop to common size first
 	s1 = img1.shape
@@ -219,21 +241,22 @@ try:
 	img1 = img1[:s[0],:s[1]]
 	img2 = img2[:s[0],:s[1]]
 
-	#ipdb.set_trace()
 	plainOvlRslt = overlapIndexPage(dolib.toBin(img1), dolib.toBin(img2))
-	lineOvlPage, lineOvlRslt = lineIndexPage(dolib.toBin(img1), dolib.toBin(img2))
-	rslt = plainOvlRslt+lineOvlRslt
+	lineOvlPage, lineOvlRslt, pageHeightRslt = lineIndexPage(dolib.toBin(img1), dolib.toBin(img2))
+	rslt = plainOvlRslt+lineOvlRslt+pageHeightRslt
 
 	if overlayed:
-		genoverlay(dolib.toBin(img1), 'Page overlay', Names[0], Names[1], rslt.replace('*',' '), outfile, img2=dolib.toBin(img2)) 
+		outimg = genoverlay(dolib.toBin(img1), 'Page overlay', Names[0], Names[1], plainOvlRslt+pageHeightRslt, img2=dolib.toBin(img2)) 
 	elif rowaligned:
-		genoverlay(lineOvlPage, 'Aligned row overlay', Names[0], Names[1], rslt.replace('*',' '), outfile) 
+		outimg = genoverlay(lineOvlPage, 'Aligned row overlay', Names[0], Names[1], lineOvlRslt)
 	else:
-		genside(tname1, tname2, s[0], s[1], Names[0], Names[1], rslt.replace('*',' '), '', outfile) 
+		outimg=genside(img1, img2, s[0], s[1], Names[0], Names[1], rslt.replace('*',' '), '')
+        #cv2.imwrite("xx.png", outimg);
+        Image.fromarray(outimg).save(outfile)
 
-	cmd = 'exiftool -overwrite_original -Custom1="%s" %s >/dev/null'%(rslt.replace('*',':'), outfile)
+        # write statistics to the pdf file, to be used in report creation
+	cmd = 'exiftool -overwrite_original -Custom1="%s" %s >/dev/null'%(rslt.replace('|',':'), outfile)
 	os.system(cmd)
-	os.unlink(tname1)
-	os.unlink(tname2)
 except MyException, e:
 	sys.stderr.write(e.what+"("+Names[0]+", "+Names[1]+")\n")
+

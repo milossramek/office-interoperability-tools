@@ -135,11 +135,11 @@ function gensummary
 			t=`exiftool -Custom1 $f`
 			if [ ! $firstdone ]
 			then
-				idesc="`sel2 "$t" 3`,`sel2 "$t" 5`,`sel2 "$t" 7`,`sel2 "$t" 9`,`sel2 "$t" 11`,`sel2 "$t" 13`,`sel2 "$t" 15`,`sel2 "$t" 17`,`sel2 "$t" 19`,`sel2 "$t" 21`,`sel2 "$t" 23`"
+				idesc="`sel2 "$t" 2`,`sel2 "$t" 4`,`sel2 "$t" 6`,`sel2 "$t" 8`,`sel2 "$t" 10`,`sel2 "$t" 12`,`sel2 "$t" 14`,`sel2 "$t" 16`,`sel2 "$t" 18`"
 				echo "View number,View pair file,Test case,Format, Source app,Target app,$idesc">$1.csv
 				firstdone=1
 			fi
-			idesc="`sel2 "$t" 4`,`sel2 "$t" 6`,`sel2 "$t" 8`,`sel2 "$t" 10`,`sel2 "$t" 12`,`sel2 "$t" 14`,`sel2 "$t" 16`,`sel2 "$t" 18`,`sel2 "$t" 20`,`sel2 "$t" 22`,`sel2 "$t" 24`"
+			idesc="`sel2 "$t" 3`,`sel2 "$t" 5`,`sel2 "$t" 7`,`sel2 "$t" 9`,`sel2 "$t" 11`,`sel2 "$t" 13`,`sel2 "$t" 15`,`sel2 "$t" 17`,`sel2 "$t" 19`"
 			#echo $tags
 
 			echo $info 1>&2
@@ -153,7 +153,9 @@ function gensummary
 			then
 				zz=0$zz
 			fi
-			if [ "$annotate" ] 
+			# 'convert -annotate' not working, so skip it here 
+			#if [ "$annotate" ] 
+			if [ "1" ] 
 			then
 				#echo a
 				#convert $f $aview-$zz$i.pdf
