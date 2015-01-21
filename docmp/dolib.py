@@ -9,10 +9,16 @@
 #
 
 import SimpleITK as sitk
+from tifffile import TIFFfile
 import numpy as np
 import sys, os, tempfile
 import ipdb
 #ipdb.set_trace()
+
+class DoException(Exception):
+	def __init__(self, what):
+		self.what = what
+
 
 def toitk(image):
 	"""
@@ -44,19 +50,29 @@ def distanceitk(image, signed=False):
 	return fromitk(itkImage, wasitk)
 
 
-def pdf2array(pdffile, res):
+def pdf2array1(pdffile, res):
 	"""
 	read pdf file and convert it to numpy array
 	Only the first page is converted
 	"""
 	tname = tmpname()+'.tif'
-	cmd = 'cat %s | gs -dQUIET -dNOPAUSE -sDEVICE=tiffgray -r%d -sOutputFile=%s -'%(pdffile, res, tname)
+	cmd = 'cat %s | gs -dQUIET -dNOPAUSE -sDEVICE=tiffgray -r%d -sOutputFile=%s - 2>/dev/null'%(pdffile, res, tname)
 	os.system(cmd)
+	if not os.path.exists(tname): return None
 	img = (sitk.GetArrayFromImage(sitk.ReadImage(tname))).astype(np.uint8)
-	if img.ndim == 3:	# currently we work only with the first page
-		return img[0]
-	else:
-		return img
+	return img
+
+def pdf2array(pdffile, res=300):
+	"""
+	read pdf file and convert it to numpy array
+	Only the first page is converted
+	"""
+	tname = tmpname()+'.tif'
+	cmd = 'cat %s | gs -dQUIET -dNOPAUSE -sDEVICE=tiffgray -r%d -sOutputFile=%s - 2>/dev/null'%(pdffile, res, tname)
+	os.system(cmd)
+	if not os.path.exists(tname): return None
+        imgfile = TIFFfile(tname)
+	return img
 
 	
 def getBBox(img1, img2=None):
@@ -65,9 +81,9 @@ def getBBox(img1, img2=None):
 	"""
 	if img2 == None:
 		B = np.argwhere(img1)
-		if B.shape[0] ==0:
-			raise MyException("Error in getBBox: Empy document ")
-		return B.min(0), B.max(0) + 1
+		if B.shape[0] == 0:
+			raise DoException("Error in getBBox: Empy document ")
+		return B.min(0), B.max(0) + 3
 	else:
 		min1, max1 = getBBox(img1)
 		min2, max2 = getBBox(img2)
@@ -113,7 +129,10 @@ def GetLineSegments(itrim):
 	# set the last segment lenght
 	#ipdb.set_trace()
 	if tx[-1][1] == 0: tx[-1][1] = itrim.shape[0] - tx[-1][0]
-	if sp[-1][1] == 0: sp[-1][1] = itrim.shape[0] - sp[-1][0]
+	if sp==[]:# empy if there is just one line in the image
+		sp.append(np.array((0,0)))
+	else:
+		if sp[-1][1] == 0: sp[-1][1] = itrim.shape[0] - sp[-1][0]
 	return tx, sp
 
 def ovlLine(im1, im2, shift=0):
@@ -131,7 +150,7 @@ def ovlLine(im1, im2, shift=0):
 		im[shift:,:,2] = 1-im2
 	return im
 
-def alignLineIndex(l1, l2):
+def alignLineIndex(l1, l2, halign=True):
 	"""
 	compute several line similarity measures with horizontal and vertical alignment
 	"""
@@ -147,6 +166,7 @@ def alignLineIndex(l1, l2):
 	horizPosErr =  np.argmax(cor)-sc1.shape[0]/2
 
 	# align the row horizontally
+	if halign == False: horizPosErr = 0
 	l2c = l2.copy()
 	l2c[:] = 0
 	if horizPosErr > 0:
@@ -177,9 +197,17 @@ def alignLineIndex(l1, l2):
 		ovlaps[i] = 1.0 - float(np.sum(diff)) / (np.sum(ll2) + np.sum(ll1))
 
 	bf = ovlaps.argmax(); # best fit position
+	#ll1 = np.zeros(l2.shape,dtype=np.uint8)
+	#we add a line of pixels above and below
+	#ll1 = np.zeros((l2.shape[0]+2,l2.shape[1]),dtype=np.uint8)
 	ll1 = np.zeros(l2.shape,dtype=np.uint8)
+	#ll1[bf+1:bf+1+l1.shape[0]] = l1
 	ll1[bf:bf+l1.shape[0]] = l1
-	ll2=l2
+	#ll2=l2
+	#ll2 = np.zeros((l2.shape[0]+2,l2.shape[1]),dtype=np.uint8)
+	ll2 = np.zeros(l2.shape,dtype=np.uint8)
+	#ll2[1:1+l2.shape[0]] = l2
+	ll2[0:l2.shape[0]] = l2
 	if len(sr1) > len(sr2):
 		overlayedLines = ovlLine(ll2, ll1)
 	else:

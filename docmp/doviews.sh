@@ -62,6 +62,7 @@ function genpairs
 	pairlists=
 	pairlistp=
 	pairlistl=
+	pairlistz=
 	for d in $1; do 
 		#first create a list of files to compare
 		for s in $printapps; do #source app
@@ -97,9 +98,12 @@ function genpairs
 					#page overlays
 					createpair "$fview-p-$pairname" "-p"
 					pairlistp="$pairlistp $fview-p-$pairname"
-					#line aligned overlays
+					#line vertically aligned overlays
 					createpair "$fview-l-$pairname" "-l"
 					pairlistl="$pairlistl $fview-l-$pairname"
+					#line vertically and horizontally aligned overlays
+					createpair "$fview-z-$pairname" "-z"
+					pairlistz="$pairlistz $fview-z-$pairname"
 				done
 			fi
 		done
@@ -129,7 +133,7 @@ function gensummary
 	for f  in $pairlists;
 	do
 		b=`basename $f .pdf`
-		info="$i,$f,`sel1 $b 2`,`sel1 $b 4`,`sel1 $b 3`,`sel1 $b 5`"
+		info="$i,$f,`sel1 $b 3`,`sel1 $b 5`,`sel1 $b 4`,`sel1 $b 6`"
 		if [ -f $f ]; then
 			t=`exiftool -Custom1 $f`
 			if [ ! $firstdone ]
@@ -261,6 +265,7 @@ else
 	pdftk $pairlists output $outname-s.pdf
 	pdftk $pairlistp output $outname-p.pdf
 	pdftk $pairlistl output $outname-l.pdf
+	pdftk $pairlistz output $outname-z.pdf
 	gensummary $outname
 fi
 

@@ -1,8 +1,8 @@
 #! /bin/bash
-# copy exiting examples to a different application
+# copy existing examples to a different application
 . config.sh
-from=LO42
-to=LO43
+from=LO43
+to=LO4M
 ext=odt
 for i in $cases; do 
 	(

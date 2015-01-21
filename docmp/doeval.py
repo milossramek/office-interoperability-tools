@@ -32,16 +32,17 @@ def usage(desc):
 	print "\t-o outfile ........ report {default: "+ofname+"}"
 	print "\t-a ................ list of applications to include in report {all}"
 	print "\t-c ................ include details about conversion of individual documents"
-	print "\t-e ................ include verifications"
+	#print "\t-e ................ include verifications"
+	print "\t-r ................ show average grades in summaries {show only worst grades}"
 	print "\t-l ................ display document lines with poor feature distance error (slow)"
 	print "\t-v ................ be verbose"
 	print "\t-p url ............ url of the location the pair pdf file will be (manually) copied to"
 	print "\t-h ................ this usage"
 
 def parsecmd(desc):
-	global verbose, Names, useapps, repFC, repVer, repLineOvls, ofname, lpath
+	global verbose, Names, useapps, repFC, repVer, repLineOvls, ofname, lpath, showAverages
 	try:
-		opts, Names = getopt.getopt(sys.argv[1:], "hvp:o:cela:mxr", ["help", "verbose"])
+		opts, Names = getopt.getopt(sys.argv[1:], "hvp:o:cela:r", ["help", "verbose"])
 	except getopt.GetoptError as err:
 		# print help information and exit:
 		print str(err) # will print something like "option -a not recognized"
@@ -54,6 +55,7 @@ def parsecmd(desc):
 			usage(desc)
 			sys.exit()
 		elif o in ("-c"): repFC=True
+		elif o in ("-r"): showAverages=True
 		elif o in ("-e"): repVer=True
 		elif o in ("-l"): repLineOvls=True
 		elif o in ("-o"):
@@ -184,6 +186,7 @@ def pdfpaths(case, fmt, a1, a2):
 	s='/'
 	t='.'
 	d='-'
+	#ipdb.set_trace()
 	source = case+s+a1+s+case+d+a1+t+native[a1]+t+a1+t+'pdf'
 	target = case+s+a1+s+case+d+a1+t+fmt+t+a2+t+'pdf'
 	return source, target
@@ -315,13 +318,26 @@ def createTableWithLinks(name, tbl, ):
 					tc.addElement(P(text=v))
 				else:
 					#ipdb.set_trace()
+					p = P()
 					if isinstance(v,tuple): 
-						w=np.max(np.array(v[0]))
-						p=P(stylename='C'+str(int(w))+'style')
+					    w=np.max(np.array(v[0]))
+					    p=P(stylename='C'+str(int(w))+'style')
+                                            labels='pzls'
+                                            for i in range(4):
+					        link = A(type="simple",href=lpath+str(v[1]).replace("-s-","-"+labels[i]+"-"), text=str(v[0][i]))
+					        p.addElement(link)
+					        p.addText(" ")
 					else:
-						p = P()
-					link = A(type="simple",href=lpath+str(v[1]), text=v[0])
-					p.addElement(link)
+					    p.addText(str(v[0])+ " ( ")
+					    link = A(type="simple",href=lpath+str(v[1]), text="S")
+					    p.addElement(link)
+					    p.addText(" ")
+					    link = A(type="simple",href=lpath+str(v[1]).replace("-s-","-p-"), text="P")
+					    p.addElement(link)
+					    p.addText(" ")
+					    link = A(type="simple",href=lpath+str(v[1]).replace("-s-","-l-"), text="L")
+					    p.addElement(link)
+					    p.addText(" )")
 					tc.addElement(p)
 			tr.addElement(tc)
 	return table
@@ -368,8 +384,8 @@ def getWorstLine(name0, name1):
 	"""
 	global errormeasures, filestodelete
 	dpi=96	#if 192 is used, images appear in the odt file with 100% magnification
-	img0, tnameo = dolib.pdf2array(name0, 2*dpi)
-	img1, tname1 = dolib.pdf2array(name1, 2*dpi)
+	img0 = dolib.pdf2array(name0, 2*dpi)
+	img1 = dolib.pdf2array(name1, 2*dpi)
 	img0 = dolib.toBin(img0)
 	img1 = dolib.toBin(img1)
 
@@ -403,14 +419,17 @@ def reportFmtCase(textdoc, rstlTab, apps, fmtcase):
 	l=['source / target']
 	
 	#textdoc.text.addElement(H(outlinelevel=3,text='Grading of file conversions'))
-	text = "The source and target test documents for the '%s' test case and the '%s' format were converted to pdf."%(fmtcase[0], fmtcase[1])
+	text = "The source and target test documents for the '%s' test case and the '%s' format were converted to pdf. "%(fmtcase[0], fmtcase[1])
 	text+= "Both pdf files were then compared and graded. The grades span from '0' (identical) to '5' (very very bad)"
 	textdoc.text.addElement(P(text=text))
 	textdoc.text.addElement(P(text=' '))
 	textdoc.text.addElement(createFmtCaseTable(rsltTab, fmtcase, apps, name='table'))
 	textdoc.text.addElement(P(text=' '))
-	text = "The tuples show values of the observed error measures: %s."%str(errormeasures)
-	text+= "The links point to the overlayed view of the printed source and target documents, showing also a detailed list of all computed error measures."
+        text = "Meaning of grades from left: %s. "%str(errormeasures)
+	text+= "The hyperlinks point different views of the printed source and target documents, "
+        text+= "which reflect the problem best. "
+        text+= "If the leftmost view is too messy, see the rightmost side-by-side view. "
+
 	textdoc.text.addElement(P(text=text))
 
 def reportVerification(textdoc, rsltTab, fmtcase):
@@ -470,19 +489,19 @@ def addStyles(textdoc):
 	s.addElement(C0)
 
 	C1 = Style(name="C1style",family="paragraph", parentstylename='Standard', displayname="Color style 1")
-	C1.addElement(ParagraphProperties(backgroundcolor="#AAFF00"))
+	C1.addElement(ParagraphProperties(backgroundcolor="#00FF00"))
 	s.addElement(C1)
 
 	C2 = Style(name="C2style",family="paragraph", parentstylename='Standard', displayname="Color style 2")
-	C2.addElement(ParagraphProperties(backgroundcolor="#FFFF00"))
+	C2.addElement(ParagraphProperties(backgroundcolor="#AAFF00"))
 	s.addElement(C2)
 
 	C3 = Style(name="C3style",family="paragraph", parentstylename='Standard', displayname="Color style 3")
-	C3.addElement(ParagraphProperties(backgroundcolor="#FFAA00"))
+	C3.addElement(ParagraphProperties(backgroundcolor="#FFFF00"))
 	s.addElement(C3)
 
 	C4 = Style(name="C4style",family="paragraph", parentstylename='Standard', displayname="Color style 4")
-	C4.addElement(ParagraphProperties(backgroundcolor="#FF0000"))
+	C4.addElement(ParagraphProperties(backgroundcolor="#FFAA00"))
 	s.addElement(C4)
 
 	C5 = Style(name="C5style",family="paragraph", parentstylename='Standard', displayname="Color style 5")
@@ -503,9 +522,9 @@ def showItems(textdoc, text, itemlist):
 
 #global definitions
 native = {	# native formats
-
-		'LO36':'odt', 'LO40':'odt', 'LO41':'odt', 'LO42':'odt', 'OO33':'odt', 'AO40':'odt', 'AO34':'odt',
-	'MS13':'docx', 'MS10':'docx', 'MS07':'docx', }
+		'LO36':'odt', 'LO40':'odt', 'LO41':'odt', 'LO42':'odt', 
+                'LO43':'odt', 'OO33':'odt', 'AO40':'odt', 'AO34':'odt',
+	        'MS13':'docx', 'MS10':'docx', 'MS07':'docx', }
 progdesc='Derive some results from pdf tests'
 verbose = False
 repFC=False
@@ -513,14 +532,19 @@ repVer=False
 repLineOvls=False
 useapps=None
 sumMethod='avg'
+showAverages=False
 
 mdMax = (0.01,0.5,1,2,4)	#0.5: difference of perfectly fitting AOO/LOO and MS document owing to different character rendering
 phMax = (0.01,5,10,15,20)	# 
 hsMax = (0.01,2, 4, 6,8)
 ldMax = (0.01,0.01,0.01,0.01,0.01)
 ofname= 'rslt'
+# absolute path
 lpath = 'file://'+os.getcwd()+'/'
-errormeasures=['text height err.', 'feature dist. err.', 'line position err.', 'line number diff.'] #the order is defined by the return value of the GetGradeInd function
+# relative path 
+lpath = '../'
+#errormeasures=['TextHeightError', 'FeatureDistError', 'HorizLinePositionError', 'LineNumberDiff'] #the order is defined by the return value of the GetGradeInd function
+errormeasures=['TextHeightError', 'FeatureDistError', 'HorizLinePosErr', 'LineNumberDiff'] #the order is defined by the return value of the GetGradeInd function
 
 parsecmd(progdesc)
 #ipdb.set_trace()
@@ -549,7 +573,7 @@ for fname in Names:
         #ipdb.set_trace()
 	mdInd = csvhdr.index('FeatureDistanceError[mm]')
 	phInd = csvhdr.index('TextHeightError[mm]')
-	hsInd = csvhdr.index('LinePositionError[mm]')
+	hsInd = csvhdr.index('HorizLinePositionError[mm]')
 	ldInd = csvhdr.index('LineNumDifference')
 	vread = {}	#verified read capability 
 	vwrite = {} 	#verified Write capability
@@ -588,6 +612,11 @@ for k in rsltTab.keys():
 	if k[1] not in formats: formats.append(k[1])
 	if k[0] not in cases: cases.append(k[0])
 
+#move 0033 to start, if exists
+if apps[-1] == "OO33":
+    apps.remove("OO33")
+    apps = ["OO33"]+apps
+
 # start writing the report
 
 textdoc.text.addElement(P(text='Results of the "docmp" office document interoperability test', stylename="Heading"))
@@ -616,27 +645,27 @@ textdoc.text.addElement(P(text=text))
 
 textList = List()
 item = ListItem()
-text='Text height error: difference in height of the rendered text in mm of the source and target pdf. '
-text += 'The following thresholds were used for grading: %s'%str(phMax)
+text='TextHeightError: difference in height of the rendered text of the source and target pdf (in mm). '
+text += 'The following thresholds were used for grading: %s mm.'%str(phMax)
 item.addElement(P(text=text))
 textList.addElement(item)
 item = ListItem()
-text='Feature distance error: distance between differently rendered details of overlayed corresponding text lines of both documents , measured in mm. Example1:  if list bullets have different distance to the text, the measure reflects mutual distance of the bullets. Example 2: if different bullet characters are used, the measure reflects maximum distance between contours of both bullet shapes. '
-text += 'The following thresholds were used for grading: %s'%str(mdMax)
+text='FeatureDistanceError: distance between differently rendered details of corresponding overlayed text lines of both documents , measured in mm. Example1:  if list bullets have different distance to the text, the measure reflects mutual distance of the bullets. Example 2: if different bullet characters are used, the measure reflects maximum distance between contours of both bullet shapes. '
+text += 'The following thresholds were used for grading: %s mm.'%str(mdMax)
 item.addElement(P(text=text))
 textList.addElement(item)
 textdoc.text.addElement(textList)
 item = ListItem()
-text='Line position error: horizontal shift in mm required to for best match of the lines. '
-text += 'The following thresholds were used for grading: %s'%str(hsMax)
+text='HorizLinePositionError: horizontal shift in mm required to achieve best match of the lines. '
+text += 'The following thresholds were used for grading: %s mm.'%str(hsMax)
 item.addElement(P(text=text))
 textList.addElement(item)
 item = ListItem()
-text='Line number error: difference of the number of lines of both documents. Only two grades are used: 0 for equal number of lines, 5 for different.' 
+text='LineNumberDiff: difference of the numbers of lines in both documents. Only two grades are used: 0 for equal number of lines, 5 for different.' 
 item.addElement(P(text=text))
 textList.addElement(item)
 textdoc.text.addElement(textList)
-text="Except for the numeric errors overlayed display of source/targer pdfs was created and is available through links in the tables below"
+text="Except for the numeric errors overlayed views of source/targer pdfs was created and is available through links in the tables below"
 textdoc.text.addElement(P(text=' '))
 textdoc.text.addElement(P(text=text))
 
@@ -646,13 +675,14 @@ showItems(textdoc, "Tested cases: ", cases)
 showItems(textdoc, "Tested applications: ", apps)
 textdoc.text.addElement(P(text=''))
 
-text="Average grades:"
-textdoc.text.addElement(P(text=text))
-tbl=[['format']+hdr]
-for f in formats:
+if showAverages:
+    text="Average grades:"
+    textdoc.text.addElement(P(text=text))
+    tbl=[['format']+hdr]
+    for f in formats:
 	l=[f]+ getFmtCaseAvg(rsltTab, apps, fmt=f,sumMethod='avg')
 	tbl.append(l)
-textdoc.text.addElement(createTable('Table_all_cases', tbl))
+    textdoc.text.addElement(createTable('Table_all_cases', tbl))
 
 text="Worst grades:"
 textdoc.text.addElement(P(text=text))
@@ -669,13 +699,14 @@ showItems(textdoc, "Tested document formats: ", formats)
 showItems(textdoc, "Tested applications: ", apps)
 textdoc.text.addElement(P(text=''))
 
-text="Average grades:"
-textdoc.text.addElement(P(text=text))
-tbl=[['case']+hdr]
-for c in cases:
+if showAverages:
+    text="Average grades:"
+    textdoc.text.addElement(P(text=text))
+    tbl=[['case']+hdr]
+    for c in cases:
 	l=[c]+ getFmtCaseAvg(rsltTab, apps, case=c, sumMethod='avg')
 	tbl.append(l)
-textdoc.text.addElement(createTable('Table_all_formats', tbl))
+    textdoc.text.addElement(createTable('Table_all_formats', tbl))
 
 text="Worst grades:"
 textdoc.text.addElement(P(text=text))
@@ -694,9 +725,11 @@ for f in formats:
 	showItems(textdoc, "Tested applications: ", apps)
 	textdoc.text.addElement(P(text=''))
 
-	text="Average grades:"
-	textdoc.text.addElement(P(text=text))
-	textdoc.text.addElement(createAvgTable(rsltTab, apps, fmt=f,sumMethod='avg',name='table_format_%s'%f))
+
+        if showAverages:
+	    text="Average grades:"
+	    textdoc.text.addElement(P(text=text))
+	    textdoc.text.addElement(createAvgTable(rsltTab, apps, fmt=f,sumMethod='avg',name='table_format_%s'%f))
 
 	text="Worst grades:"
 	textdoc.text.addElement(P(text=text))
@@ -716,7 +749,8 @@ for f in formats:
 	textdoc.text.addElement(H(outlinelevel=1,text=text))
 	for c in cases:
 		text="The '%s' test case, the '%s' format"%(c,f)
-		textdoc.text.addElement(H(outlinelevel=2,text=text))
+                if repFC or repVer or repLineOvls:
+		    textdoc.text.addElement(H(outlinelevel=2,text=text))
 		if(repFC): reportFmtCase(textdoc, rsltTab, apps, (c,f))
 		if(repVer): reportVerification(textdoc, rsltTab,  (c,f))
 		if(repLineOvls): reportLineOvls(textdoc, rsltTab,  (c,f))

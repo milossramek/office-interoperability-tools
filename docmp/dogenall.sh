@@ -69,7 +69,7 @@ if [ -e "$OO33PATH/soffice" ]
 then
 	$OO33PATH/soffice "-accept=socket,host=localhost,port=$OO33PORT;urp;StarOffice.ServiceManager" -norestore -nofirststartwizard -nologo -headless & 
 	sleep 5s
-	nmap localhost
+	#nmap localhost
 fi
 
 # start AO34 server, in case we have it and need it
@@ -85,7 +85,16 @@ if [ -e "$AO40PATH/soffice" ]
 then
 	#echo "genall.sh:" $AO40PATH $AO40PORT
 	#$AO40PATH/soffice "-accept=socket,host=localhost,port=$AO40PORT;urp;StarOffice.ServiceManager" -norestore -nofirststartwizard -nologo -headless & 
-	$AO40PATH/soffice "-accept=socket,host=localhost,port=8140;urp;StarOffice.ServiceManager" -norestore -nofirststartwizard -nologo -headless & 
+	$AO40PATH/soffice "-accept=socket,host=localhost,port=$AO40PORT;urp;StarOffice.ServiceManager" -norestore -nofirststartwizard -nologo -headless & 
+	sleep 5s
+fi
+
+# start AO41 server, in case we have it and need it
+if [ -e "$AO41PATH/soffice" ]
+then
+	#echo "genall.sh:" $AO41PATH $AO41PORT
+	#$AO41PATH/soffice "-accept=socket,host=localhost,port=$AO41PORT;urp;StarOffice.ServiceManager" -norestore -nofirststartwizard -nologo -headless & 
+	$AO41PATH/soffice "-accept=socket,host=localhost,port=$AO41PORT;urp;StarOffice.ServiceManager" -norestore -nofirststartwizard -nologo -headless & 
 	sleep 5s
 fi
 
