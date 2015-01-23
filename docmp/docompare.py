@@ -22,6 +22,9 @@ def tmpname():
 	f.close()
 	return f.name
 
+def toBin(img, thr=200):
+	return (img < thr).astype(np.uint8)
+
 def pdf2array(pdffile, res=300):
 	"""
 	read pdf file and convert it to numpy array
@@ -49,8 +52,6 @@ def makeSingle(pages, shapes):
         bigpage = np.zeros((height,width), dtype=pages[0].dtype)
         pos=0
         for p, s in zip(pages, shapes):
-            #p[-1,:]=0
-            #p[-2,:]=0
             bigpage[pos:pos+s[0],0:s[1]]=p[0:s[0],0:s[1]]
             pos += s[0]
         return bigpage
@@ -68,9 +69,13 @@ def getPagePixelOverlayIndex(iarray1, iarray2):
         rslt = 'PagePixelOvelayIndex[%%]: %2.1f | '%ovl
 	return rslt
 
-def identMerged(tx0, sp0, tx1, sp1):
+def identMerged1x(tx0, sp0, tx1, sp1):
     """ check, if some lines are just merged rather than missing"""
-    if len(tx0) > len (tx1):
+    #print np.array(tx0)[:,1]
+    #print np.array(tx1)[:,1]
+    #print
+    order = len(tx0) > len (tx1)
+    if order:
         tx=tx1; sp=sp1
         tx1=tx0; sp1=sp0
         tx0=tx; sp0=sp
@@ -78,23 +83,69 @@ def identMerged(tx0, sp0, tx1, sp1):
     #ipdb.set_trace()
     #compute difference to text-space-text sum in longer array
     txx=[]
-    for i in range(len(tx0)):
+    for i in range(min(len(tx0),len(tx1))-1):
         tx=tx1[i][1] + sp1[i][1] + tx1[i+1][1]
         txx.append(tx - tx0[i][1])
     cc=np.argmin(txx)
-    corrected=False
+    changed=False
     txmin=min( np.array(tx1)[:,1] ) # minimal line heigh, used at detection threshold
     if txx[cc] < txmin/2: #expected to be near 0
         tx1[cc][1] += sp1[cc][1] + tx1[cc+1][1]
         #tx1[cc][1] = txx[cc]
         tx1 = tx1[:cc+1]+tx1[cc+2:]
         sp1 = sp1[:cc]+sp1[cc+1:]
-        corrected=True
+        changed=True
 
-    if len(tx0) > len (tx1):
-        return tx1, sp1, tx0, sp0, corrected
+    if order:
+        return tx1, sp1, tx0, sp0, changed
     else:
-        return tx0, sp0, tx1, sp1, corrected
+        return tx0, sp0, tx1, sp1, changed
+
+def mergeSingle(ml, tx0, sp0, tx1, sp1):
+    """ merge one blob"""
+    #print np.array(tx0)[:,1]
+    #print np.array(tx1)[:,1]
+    tx0[ml][1] += sp0[ml][1] + tx0[ml+1][1]
+    tx0 = tx0[:ml+1]+tx0[ml+2:]
+    sp0 = sp0[:ml]+sp0[ml+1:]
+    #print np.array(tx0)[:,1]
+    #print np.array(tx1)[:,1]
+    #print
+    return tx0, sp0
+
+def pr(tx, p=1): print len(tx), np.array(tx)[:,p]
+
+def mergeLocation(tx0, sp0, tx1, sp1):
+    """
+    find merge location in (tx0,sp0)
+    """
+    if len(tx0) < 2: return 9999
+    txmin=min( np.array(tx0)[:,1] ) # minimal line heigh, used as detection threshold
+    txx=[]
+    #ipdb.set_trace()
+    for i in range(min(len(tx0)-1,len(tx1))):
+        tx=tx0[i][1] + sp0[i][1] + tx0[i+1][1]
+        txx.append(tx - tx1[i][1])
+    cc = np.argmin(txx)
+    #ipdb.set_trace()
+    if txx[cc] < txmin/3: #expected to be near 0
+        return cc
+    else:
+        return 9999
+
+def mergeBlobs(tx0, sp0, tx1, sp1):
+    changed = True
+    ml0 = mergeLocation(tx0, sp0, tx1, sp1) 
+    ml1 = mergeLocation(tx1, sp1, tx0, sp0)
+    while ml0 < len(tx0) or ml1 < len(tx1):
+        #ipdb.set_trace()
+        if ml0 < ml1:
+            tx0, sp0 = mergeSingle(ml0, tx0, sp0, tx1, sp1)
+        else:
+            tx1, sp1 = mergeSingle(ml1, tx1, sp1, tx0, sp0)
+        ml0 = mergeLocation(tx0, sp0, tx1, sp1) 
+        ml1 = mergeLocation(tx1, sp1, tx0, sp0)
+    return tx0, sp0, tx1, sp1
 
 def ovlLine(im1, im2, shift=0):
 	"""
@@ -189,9 +240,7 @@ def lineIndexPage(iarray0, iarray1):
 
         #ipdb.set_trace()
         # detect merged lines in one set and merge them in the other
-        while len(tx0) != len(tx1):
-            tx0, sp0, tx1, sp1, corr = identMerged(tx0, sp0, tx1, sp1)
-            if not corr: break
+        tx0, sp0, tx1, sp1 = mergeBlobs(tx0, sp0, tx1, sp1)
         #ipdb.set_trace()
 
         # create arrays with aligned lines
@@ -215,26 +264,26 @@ def lineIndexPage(iarray0, iarray1):
 
 	#create a page view to display vertically and horizontally adjusted overlays, taking line spaces from the source (first) page
         # height of the output page: sum of overlayed blobs + sum of spaces from image 1
-        outheight = ystart0 + sum([b.shape[0] for b in vh_lines])+ sum(np.array(sp0)[:,1]) 
+        outheight = ystart0 + sum([b.shape[0] for b in vh_lines])+ sum(np.array(sp0)[:,1]) + (iarray0.shape[0] - ystop0)
 	vh_page = np.zeros((outheight, iarray0.shape[1], 3), dtype=np.uint8)
 	vh_page[:] = 1
 
         # create page of horizontally aligned lines
 	ar=ystart0	#the actual row
-	for i in range(min(len(tx0),len(tx1))-1):
+	for i in range(min(len(tx0),len(tx1))):
 		vh_page[ar:ar+vh_lines[i].shape[0],xstart0:xstart0+vh_lines[i].shape[1]] = vh_lines[i]
 		ar += vh_lines[i].shape[0] + sp0[i][1]
         #ipdb.set_trace()
 
 	#create a page view to display vertically adjusted overlays, taking line spaces from the source (first) page
         # height of the output page: sum of overlayed blobs + sum of spaces from image 1
-        outheight = ystart0 + sum([b.shape[0] for b in v_lines])+ sum(np.array(sp0)[:,1]) 
+        outheight = ystart0 + sum([b.shape[0] for b in v_lines])+ sum(np.array(sp0)[:,1]) + (iarray0.shape[0] - ystop0)
 	v_page = np.zeros((outheight, iarray0.shape[1], 3), dtype=np.uint8)
 	v_page[:] = 1
 
         # create page of the original lines from iarray1
 	ar=ystart0	#the actual row
-	for i in range(min(len(tx0),len(tx1))-1):
+	for i in range(min(len(tx0),len(tx1))):
 		v_page[ar:ar+v_lines[i].shape[0],xstart0:xstart0+v_lines[i].shape[1]] = v_lines[i]
 		ar += v_lines[i].shape[0] + sp0[i][1]
 
@@ -349,7 +398,7 @@ def getBBox(img1, img2=None):
 	get a bounding box of nonzero pixels of one or two images
 	"""
 	if img2 == None:
-		B = np.argwhere(255-img1)
+		B = np.argwhere(img1)
 		if B.shape[0] == 0:
 			return (0,0),(0,0)
 		return B.min(0), B.max(0) + 3
@@ -366,7 +415,7 @@ def px2mm(val):
 	return val*i2mm/dpi
 
 def usage(desc):
-	global outfile
+	global outfile, binthr
 	print sys.argv[0]+':',  desc
 	print "Usage: ", sys.argv[0], "[options]", "source.pdf target.pdf"
 	print "\t-o ................ file to store output view to {default:"+outfile+'}'
@@ -378,13 +427,15 @@ def usage(desc):
 	print "\t-p ................ page overlay without alignment {default: all}"
 	print "\t-l ................ page overlay with vertical line alignment {default: all}"
 	print "\t-z ................ page overlay with vertical and horizontal line alignment {default: all}"
+	print "\t-t ................ binarization threshold (only red band used( {default: %d}"%binthr
+
 	print "\t-v ................ be verbose"
 	print "\t-h ................ this usage"
 
 def parsecmd(desc):
-	global verbose, dpi, Names, annotated, overlayStyle, outfile
+	global verbose, dpi, Names, annotated, overlayStyle, outfile, binthr
 	try:
-		opts, Names = getopt.getopt(sys.argv[1:], "hvalpszo:d:", ["help", "verbose"])
+            opts, Names = getopt.getopt(sys.argv[1:], "hvalpszo:d:t:", ["help", "verbose"])
 	except getopt.GetoptError as err:
 		# print help information and exit:
 		print str(err) # will print something like "option -a not recognized"
@@ -410,6 +461,8 @@ def parsecmd(desc):
 			outfile = a
 		elif o in ("-d"):
 			dpi = int(a)
+		elif o in ("-t"):
+			binthr = int(a)
 		else:
 			assert False, "unhandled option"
 		# ...
@@ -423,6 +476,7 @@ progdesc="Compare two pdf documents and return some statistics"
 verbose = False
 outfile = "paircmp.pdf"
 dpi = 200
+binthr = 200
 parsecmd(progdesc)
 if Names == []:
 	usage(progdesc)
@@ -441,9 +495,9 @@ try:
 	pages2, shapes2 = pdf2array(Names[1], dpi)
         if pages2 == None:
             img1 = makeSingle(pages1, shapes1)
-	    outimg = genoverlay(dolib.toBin(img1), "File '%s' cannot be loaded, test failed"%(Names[1]), Names[0], Names[1], "")
+	    outimg = genoverlay(toBin(img1,binthr), "File '%s' cannot be loaded, test failed"%(Names[1]), Names[0], Names[1], "")
             Image.fromarray(outimg).save(outfile+'-p.pdf')
-            rsltText="-:-:-:-:-:-:-:-:-:open"  #dummy resupl sting 10 dashes necessary
+            rsltText="-:-:-:-:-:-:-:-:-:open"  #dummy result string 10 dashes necessary
 	    os.system(exifcmd%(rsltText, outfile+'-p.pdf'))
             Image.fromarray(outimg).save(outfile+'-l.pdf')
 	    os.system(exifcmd%(rsltText, outfile+'-l.pdf'))
@@ -462,7 +516,7 @@ try:
 
 	start, stop = getBBox(img2)
         if not (np.array(start) != np.array(stop)).any():
-	    outimg = genoverlay(dolib.toBin(img1), "File '%s' is empty, test failed"%(Names[1]), Names[0], Names[1], "")
+	    outimg = genoverlay(toBin(img1,binthr), "File '%s' is empty, test failed"%(Names[1]), Names[0], Names[1], "")
             Image.fromarray(outimg).save(outfile+'-p.pdf')
             rsltText="-:-:-:-:-:-:-:-:-:empty"  #dummy resupl sting 10 dashes necessary
 	    os.system(exifcmd%(rsltText, outfile+'-p.pdf'))
@@ -480,16 +534,19 @@ try:
 	s=np.minimum(s1,s2)
 	img1 = img1[:s[0],:s[1]]
 	img2 = img2[:s[0],:s[1]]
+        bimg1 = toBin(img1,binthr)
+        bimg2 = toBin(img2,binthr)
 
-	plainOvlRslt = getPagePixelOverlayIndex(dolib.toBin(img1), dolib.toBin(img2))
-	lineVHOvlPage, lineVOvlPage, lineOvlDistRslt, lineOvlHPosRslt, pageHeightRslt = lineIndexPage(dolib.toBin(img1), dolib.toBin(img2))
+	plainOvlRslt = getPagePixelOverlayIndex(bimg1, bimg2)
+        #ipdb.set_trace()
+	lineVHOvlPage, lineVOvlPage, lineOvlDistRslt, lineOvlHPosRslt, pageHeightRslt = lineIndexPage(bimg1, bimg2)
 	rsltText = plainOvlRslt+lineOvlDistRslt+ ' | ' +lineOvlHPosRslt+' | '+pageHeightRslt
 	rsltText = rsltText.replace('|',':')
         # command to write statistics to the pdf file, to be used in report creation
 
         #options: s, p, l z
 	if overlayStyle == 'p' or overlayStyle == 'a':
-	    outimg = genoverlay(dolib.toBin(img1), 'Page overlay, no line alignment', Names[0], Names[1], plainOvlRslt+pageHeightRslt, img2=dolib.toBin(img2)) 
+	    outimg = genoverlay(bimg1, 'Page overlay, no alignment', Names[0], Names[1], plainOvlRslt+pageHeightRslt, img2=bimg2) 
             addPageLines(outimg, shapes)
             Image.fromarray(outimg).save(outfile+'-p.pdf')
 	    os.system(exifcmd%(rsltText, outfile+'-p.pdf'))
