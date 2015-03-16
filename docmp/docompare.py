@@ -8,7 +8,6 @@
 # - or any later version.
 #
 #from __future__ import print_function
-import dolib
 import numpy as np
 import cv2, Image
 import sys, getopt, os, tempfile
@@ -16,6 +15,18 @@ import ipdb
 from idisp import disp
 #ipdb.set_trace()
 from tifffile import TIFFfile
+import SimpleITK as sitk
+
+class DoException(Exception):
+	def __init__(self, what):
+		self.what = what
+
+def distanceitk(image):
+	if image.dtype=='bool':
+		itkImage = sitk.GetImageFromArray(image.astype(np.int8))
+        else:
+	    itkImage = sitk.GetImageFromArray(image)
+	return sitk.GetArrayFromImage(sitk.SignedDanielssonDistanceMap(itkImage))
 
 def tmpname():
 	f = tempfile.NamedTemporaryFile(delete=True)
@@ -24,6 +35,44 @@ def tmpname():
 
 def toBin(img, thr=200):
 	return (img < thr).astype(np.uint8)
+
+def GetLine(img, seglist, seg):
+	"""
+	get the 'seg' line of the 'seglist' list of lines fron the image
+	"""
+	return img[seglist[seg][0]:seglist[seg][0]+seglist[seg][1]]
+
+
+def GetLineSegments(itrim):
+	"""
+	Segment an image in lines and interline spaces
+	Returns lists of both (position width)
+	"""
+	asum = np.sum(itrim, axis=1)
+	abin = asum > 0
+	sp = []
+	tx = []
+	lastval=-1
+	lastpos=-1
+	for i in range(0, abin.size):
+		if abin[i] != lastval:
+			lastval = abin[i]
+			if lastval:
+				tx.append(np.array((i,0)))
+				if i>1: 
+					sp[-1][1] = i-sp[-1][0]
+			else:
+				sp.append(np.array((i,0)))
+				if i>1: 
+					tx[-1][1] = i-tx[-1][0]
+	# set the last segment lenght
+	#ipdb.set_trace()
+	if tx[-1][1] == 0: tx[-1][1] = itrim.shape[0] - tx[-1][0]
+	if sp==[]:# empy if there is just one line in the image
+		sp.append(np.array((0,0)))
+	else:
+		if sp[-1][1] == 0: sp[-1][1] = itrim.shape[0] - sp[-1][0]
+	return tx, sp
 
 def pdf2array(pdffile, res=300):
 	"""
@@ -69,38 +118,6 @@ def getPagePixelOverlayIndex(iarray1, iarray2):
         rslt = 'PagePixelOvelayIndex[%%]: %2.1f | '%ovl
 	return rslt
 
-def identMerged1x(tx0, sp0, tx1, sp1):
-    """ check, if some lines are just merged rather than missing"""
-    #print np.array(tx0)[:,1]
-    #print np.array(tx1)[:,1]
-    #print
-    order = len(tx0) > len (tx1)
-    if order:
-        tx=tx1; sp=sp1
-        tx1=tx0; sp1=sp0
-        tx0=tx; sp0=sp
-
-    #ipdb.set_trace()
-    #compute difference to text-space-text sum in longer array
-    txx=[]
-    for i in range(min(len(tx0),len(tx1))-1):
-        tx=tx1[i][1] + sp1[i][1] + tx1[i+1][1]
-        txx.append(tx - tx0[i][1])
-    cc=np.argmin(txx)
-    changed=False
-    txmin=min( np.array(tx1)[:,1] ) # minimal line heigh, used at detection threshold
-    if txx[cc] < txmin/2: #expected to be near 0
-        tx1[cc][1] += sp1[cc][1] + tx1[cc+1][1]
-        #tx1[cc][1] = txx[cc]
-        tx1 = tx1[:cc+1]+tx1[cc+2:]
-        sp1 = sp1[:cc]+sp1[cc+1:]
-        changed=True
-
-    if order:
-        return tx1, sp1, tx0, sp0, changed
-    else:
-        return tx0, sp0, tx1, sp1, changed
-
 def mergeSingle(ml, tx0, sp0, tx1, sp1):
     """ merge one blob"""
     #print np.array(tx0)[:,1]
@@ -119,7 +136,9 @@ def mergeLocation(tx0, sp0, tx1, sp1):
     """
     find merge location in (tx0,sp0)
     """
-    if len(tx0) < 2: return 9999
+    if len(tx0) < 2: 
+        #ipdb.set_trace()
+        return 9999
     txmin=min( np.array(tx0)[:,1] ) # minimal line heigh, used as detection threshold
     txx=[]
     #ipdb.set_trace()
@@ -220,8 +239,8 @@ def alignLineIndex(l1, l2, halign=True):
 		overlayedLines = ovlLine(ll2, ll1)
 	else:
 		overlayedLines = ovlLine(ll1, ll2)
-	ll1 = dolib.distanceitk(ll1)
-	ll2 = dolib.distanceitk(ll2)
+	ll1 = distanceitk(ll1)
+	ll2 = distanceitk(ll2)
 	return overlayedLines, (abs(horizPosErr), ovlaps[bf], np.average(abs(ll1-ll2)), np.max(abs(ll1-ll2)))
 
 def lineIndexPage(iarray0, iarray1):
@@ -231,12 +250,12 @@ def lineIndexPage(iarray0, iarray1):
 	# crop the first image and segment it to lines
 	(ystart0, xstart0), (ystop0, xstop0) = getBBox(iarray0)
 	itrim0 = iarray0[ystart0:ystop0, xstart0:xstop0].astype(np.uint8)
-	tx0, sp0 = dolib.GetLineSegments(itrim0)
+	tx0, sp0 = GetLineSegments(itrim0)
 	
 	# crop the second image and segment it to lines
 	(ystart1, xstart1), (ystop1, xstop1) = getBBox(iarray1)
 	itrim1 = iarray1[ystart1:ystop1, xstart1:xstop1].astype(np.uint8)
-	tx1, sp1 = dolib.GetLineSegments(itrim1)
+	tx1, sp1 = GetLineSegments(itrim1)
 
         #ipdb.set_trace()
         # detect merged lines in one set and merge them in the other
@@ -248,23 +267,23 @@ def lineIndexPage(iarray0, iarray1):
 	v_lines=[]  # original lines from iarray1
 	indices=[]
 	for i in range(min(len(tx0),len(tx1))):
-	    l0= dolib.GetLine(itrim0, tx0, i)
-            l1 = dolib.GetLine(itrim1, tx1, i)
+	    l0= GetLine(itrim0, tx0, i)
+            l1 = GetLine(itrim1, tx1, i)
             #ipdb.set_trace()
-	    #cline, ind = dolib.alignLineIndex(l0, l1)
 	    cline, ind = alignLineIndex(l0, l1)
-	    #cline, ind = dolib.alignLineIndex(dolib.GetLine(itrim0, tx0, i), dolib.GetLine(itrim1, tx1, i))
+	    #cline, ind = alignLineIndex(GetLine(itrim0, tx0, i), GetLine(itrim1, tx1, i))
             #print ind
 	    vh_lines.append(cline)
 	    indices.append(ind)
-	    #cline, ind = dolib.alignLineIndex(dolib.GetLine(itrim0, tx0, i), dolib.GetLine(itrim1, tx1, i), halign=False)
-	    cline, ind = alignLineIndex(dolib.GetLine(itrim0, tx0, i), dolib.GetLine(itrim1, tx1, i), halign=False)
+	    #cline, ind = alignLineIndex(GetLine(itrim0, tx0, i), GetLine(itrim1, tx1, i), halign=False)
+	    cline, ind = alignLineIndex(GetLine(itrim0, tx0, i), GetLine(itrim1, tx1, i), halign=False)
 	    v_lines.append(cline)
 	indices = np.array(indices)
 
 	#create a page view to display vertically and horizontally adjusted overlays, taking line spaces from the source (first) page
         # height of the output page: sum of overlayed blobs + sum of spaces from image 1
-        outheight = ystart0 + sum([b.shape[0] for b in vh_lines])+ sum(np.array(sp0)[:,1]) + (iarray0.shape[0] - ystop0)
+        outheight = ystart0 + sum([b.shape[0] for b in vh_lines])+ sum(np.array(sp0)[:,1]) + (iarray0.shape[0] - ystop0)+10
+        #outheight = ystart0 + sum([b.shape[0] for b in vh_lines])+ sum(np.array(sp0)[:,1]) 
 	vh_page = np.zeros((outheight, iarray0.shape[1], 3), dtype=np.uint8)
 	vh_page[:] = 1
 
@@ -272,20 +291,29 @@ def lineIndexPage(iarray0, iarray1):
 	ar=ystart0	#the actual row
 	for i in range(min(len(tx0),len(tx1))):
 		vh_page[ar:ar+vh_lines[i].shape[0],xstart0:xstart0+vh_lines[i].shape[1]] = vh_lines[i]
-		ar += vh_lines[i].shape[0] + sp0[i][1]
+                if i < len(sp0):
+		    ar += vh_lines[i].shape[0] + sp0[i][1]
+                else:
+		    ar += vh_lines[i].shape[0]
         #ipdb.set_trace()
 
 	#create a page view to display vertically adjusted overlays, taking line spaces from the source (first) page
         # height of the output page: sum of overlayed blobs + sum of spaces from image 1
-        outheight = ystart0 + sum([b.shape[0] for b in v_lines])+ sum(np.array(sp0)[:,1]) + (iarray0.shape[0] - ystop0)
+        outheight = ystart0 + sum([b.shape[0] for b in v_lines])+ sum(np.array(sp0)[:,1]) + (iarray0.shape[0] - ystop0) + 10
+        #outheight = ystart0 + sum([b.shape[0] for b in v_lines])+ sum(np.array(sp0)[:,1]) 
 	v_page = np.zeros((outheight, iarray0.shape[1], 3), dtype=np.uint8)
 	v_page[:] = 1
 
         # create page of the original lines from iarray1
 	ar=ystart0	#the actual row
 	for i in range(min(len(tx0),len(tx1))):
+	#for i in range(min(len(tx0),len(tx1))-1):
 		v_page[ar:ar+v_lines[i].shape[0],xstart0:xstart0+v_lines[i].shape[1]] = v_lines[i]
-		ar += v_lines[i].shape[0] + sp0[i][1]
+		#ar += v_lines[i].shape[0] + sp0[i][1]
+                if i < len(sp0):
+		    ar += v_lines[i].shape[0] + sp0[i][1]
+                else:
+		    ar += v_lines[i].shape[0]
 
 	#height error in pixels
 	heightErr=abs(float(itrim0.shape[0]-itrim1.shape[0]))
@@ -377,14 +405,6 @@ def genoverlay(img1, title, name1, name2, stattxt, img2=None):
 	        outimg = annotateImg(outimg, (0, 0, 255), 1.3, (100, 140), stattxt)
 	return outimg
 
-def addPageLines(outimg, shapes):
-    if len(shapes) > 1:
-        pos=0
-        for s in shapes:
-            outimg[pos:pos+1,...]=0 
-            pos += s[0]
-    return outimg
-
 def mm2px(val):
 	"""
 	convert 'val' im mm to pixels
@@ -406,6 +426,17 @@ def getBBox(img1, img2=None):
 		min1, max1 = getBBox(img1)
 		min2, max2 = getBBox(img2)
 		return np.minimum(min1, min2), np.maximum(max1, max2)
+
+def saveRslt(overlayStyle, title, img0, img1, name0, name1, rslt, rsltText):
+    exifcmd = 'exiftool -overwrite_original -Custom1="%s" %s >/dev/null'
+    oname = "%s-%s.pdf"%(outfile, overlayStyle)
+    if overlayStyle=='s':
+	s=np.minimum(img0.shape, img1.shape)
+	outimg=genside(img0, img1, s[0], s[1], name0, name1, rsltText.replace('*',' '), '')
+    else:
+        outimg = genoverlay(img0, title, name0, name1, rslt, img2=img1) 
+    Image.fromarray(outimg).save(oname)
+    os.system(exifcmd%(rsltText, oname))
 
 def px2mm(val):
 	"""
@@ -491,13 +522,13 @@ try:
         #load documents
 	pages1, shapes1 = pdf2array(Names[0], dpi)
         if pages1 == None:
-            raise dolib.DoException("failed to open %s."%(Names[0]))
+            raise DoException("failed to open %s."%(Names[0]))
 	pages2, shapes2 = pdf2array(Names[1], dpi)
         if pages2 == None:
             img1 = makeSingle(pages1, shapes1)
-	    outimg = genoverlay(toBin(img1,binthr), "File '%s' cannot be loaded, test failed"%(Names[1]), Names[0], Names[1], "")
-            Image.fromarray(outimg).save(outfile+'-p.pdf')
+	    outimg = genoverlay(toBin(img1,binthr), "target file '%s' cannot be loaded, test failed"%(Names[1]), Names[0], Names[1], "")
             rsltText="-:-:-:-:-:-:-:-:-:open"  #dummy result string 10 dashes necessary
+            Image.fromarray(outimg).save(outfile+'-p.pdf')
 	    os.system(exifcmd%(rsltText, outfile+'-p.pdf'))
             Image.fromarray(outimg).save(outfile+'-l.pdf')
 	    os.system(exifcmd%(rsltText, outfile+'-l.pdf'))
@@ -505,7 +536,7 @@ try:
 	    os.system(exifcmd%(rsltText, outfile+'-z.pdf'))
             Image.fromarray(outimg).save(outfile+'-s.pdf')
 	    os.system(exifcmd%(rsltText, outfile+'-s.pdf'))
-            raise dolib.DoException("failed to open %s."%(Names[1]))
+            raise DoException("failed to open %s."%(Names[1]))
 
         #ipdb.set_trace()
         shapes = [(min(a[0],b[0]),min(a[1],b[1])) for a,b in zip(shapes1, shapes2)] 
@@ -514,11 +545,16 @@ try:
         img1 = makeSingle(pages1, shapes)
         img2 = makeSingle(pages2, shapes)
 
-	start, stop = getBBox(img2)
-        if not (np.array(start) != np.array(stop)).any():
-	    outimg = genoverlay(toBin(img1,binthr), "File '%s' is empty, test failed"%(Names[1]), Names[0], Names[1], "")
+        if not (img2 != img2[0,0]).any() or not (img1 != img1[0,0]).any():
+            if not (img1 != img1[0,0]).any():
+                msg= "Source pdf '%s' is empty, nothing to test"%(Names[0])
+                rsltText="-:0:-:0:-:0:-:0:-:0"  #dummy result string 10 dashes necessary
+            else:
+	        msg = "Target pdf '%s' is empty, test failed"%(Names[1])
+                rsltText="-:-:-:-:-:-:-:-:-:empty"  #dummy result string 10 dashes necessary
+
+	    outimg = genoverlay(toBin(img1,binthr), msg, Names[0], Names[1], "")
             Image.fromarray(outimg).save(outfile+'-p.pdf')
-            rsltText="-:-:-:-:-:-:-:-:-:empty"  #dummy resupl sting 10 dashes necessary
 	    os.system(exifcmd%(rsltText, outfile+'-p.pdf'))
             Image.fromarray(outimg).save(outfile+'-l.pdf')
 	    os.system(exifcmd%(rsltText, outfile+'-l.pdf'))
@@ -526,7 +562,7 @@ try:
 	    os.system(exifcmd%(rsltText, outfile+'-z.pdf'))
             Image.fromarray(outimg).save(outfile+'-s.pdf')
 	    os.system(exifcmd%(rsltText, outfile+'-s.pdf'))
-            raise dolib.DoException("File %s is empty"%(Names[1]))
+            raise DoException(msg)
 
 	#crop to common size 
 	s1 = img1.shape
@@ -538,7 +574,6 @@ try:
         bimg2 = toBin(img2,binthr)
 
 	plainOvlRslt = getPagePixelOverlayIndex(bimg1, bimg2)
-        #ipdb.set_trace()
 	lineVHOvlPage, lineVOvlPage, lineOvlDistRslt, lineOvlHPosRslt, pageHeightRslt = lineIndexPage(bimg1, bimg2)
 	rsltText = plainOvlRslt+lineOvlDistRslt+ ' | ' +lineOvlHPosRslt+' | '+pageHeightRslt
 	rsltText = rsltText.replace('|',':')
@@ -546,27 +581,18 @@ try:
 
         #options: s, p, l z
 	if overlayStyle == 'p' or overlayStyle == 'a':
-	    outimg = genoverlay(bimg1, 'Page overlay, no alignment', Names[0], Names[1], plainOvlRslt+pageHeightRslt, img2=bimg2) 
-            addPageLines(outimg, shapes)
-            Image.fromarray(outimg).save(outfile+'-p.pdf')
-	    os.system(exifcmd%(rsltText, outfile+'-p.pdf'))
-	if overlayStyle == 'l' or overlayStyle == 'a':
-	    outimg = genoverlay(lineVOvlPage, 'Page overlay, vertically aligned lines', Names[0], Names[1], lineOvlHPosRslt)
-            addPageLines(outimg, shapes)
-            Image.fromarray(outimg).save(outfile+'-l.pdf')
-	    os.system(exifcmd%(rsltText, outfile+'-l.pdf'))
-	if overlayStyle == 'z' or overlayStyle == 'a':
-	    outimg = genoverlay(lineVHOvlPage, 'Page overlay, vertically and horizontally aligned lines', Names[0], Names[1], lineOvlDistRslt)
-            addPageLines(outimg, shapes)
-            Image.fromarray(outimg).save(outfile+'-z.pdf')
-	    os.system(exifcmd%(rsltText, outfile+'-z.pdf'))
-	if overlayStyle == 's' or overlayStyle == 'a':
-	    outimg=genside(img1, img2, s[0], s[1], Names[0], Names[1], rsltText.replace('*',' '), '')
-            addPageLines(outimg, shapes)
-            Image.fromarray(outimg).save(outfile+'-s.pdf')
-	    os.system(exifcmd%(rsltText, outfile+'-s.pdf'))
+            saveRslt('p',  'Page overlay, no alignment', bimg1, bimg2, Names[0], Names[1], plainOvlRslt+pageHeightRslt, rsltText)
 
-except dolib.DoException, e:
+	if overlayStyle == 'l' or overlayStyle == 'a':
+            saveRslt('l', 'Page overlay, vertically aligned lines', lineVOvlPage, None, Names[0], Names[1], lineOvlHPosRslt, rsltText)
+
+	if overlayStyle == 'z' or overlayStyle == 'a':
+            saveRslt('z', 'Page overlay, vertically and horizontally aligned lines', lineVHOvlPage, None, Names[0], Names[1], lineOvlDistRslt, rsltText)
+
+	if overlayStyle == 's' or overlayStyle == 'a':
+            saveRslt('s', '', img1, img2, Names[0], Names[1], lineOvlDistRslt, rsltText)
+
+except DoException, e:
 	sys.stderr.write(e.what+" ("+Names[0]+", "+Names[1]+")\n")
 	print e.what+" ("+Names[0]+", "+Names[1]+")"
 

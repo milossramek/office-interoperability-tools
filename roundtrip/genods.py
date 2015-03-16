@@ -21,19 +21,22 @@ PWENC = "utf-8"
 
 #ipdb.set_trace()
 
+progdesc='Derive some results from pdf tests'
+
 def usage(desc):
 	print sys.argv[0]+':',  desc, ofname, ifname
 	print "Usage: ", sys.argv[0], "[options]"
 	print "\t-i infile ... ..... report {default: "+ifname+"}"
 	print "\t-o outfile ........ report {default: "+ofname+"}"
 	print "\t-a ................ list of applications to include in report {all}"
+	print "\t-p url ............ url of the location the pair pdf file will be (manually) copied to"
 	print "\t-v ................ be verbose"
 	print "\t-h ................ this usage"
 
 def parsecmd(desc):
-	global verbose, useapps, ofname, ifname
+	global verbose, useapps, ofname, ifname, lpath
 	try:
-            opts, Names = getopt.getopt(sys.argv[1:], "hvi:o:a:", ["help", "verbose"])
+            opts, Names = getopt.getopt(sys.argv[1:], "hvi:o:a:p:", ["help", "verbose"])
 	except getopt.GetoptError as err:
 		# print help information and exit:
 		print str(err) # will print something like "option -a not recognized"
@@ -51,6 +54,8 @@ def parsecmd(desc):
 			ifname = a
 		elif o in ("-a"):
 			useapps = a.split()
+		elif o in ("-p"):
+			lpath = a
 		else:
 			assert False, "unhandled option"
 
@@ -86,8 +91,10 @@ def valToGrade(data):
 	"""
 	global FDEMax, HLPEMax, THEMax, LNDMax
 	#ipdb.set_trace()#
-        if data[0] == "-":
+        if data[-1] == "empty":
             return [6,6,6,6]
+        if data[-1] == "open":
+            return [7,7,7,7]
         FDEVal=5
 	for i in range(len(FDEMax)):
             if FDEMax[i] >float(data[0]):
@@ -130,6 +137,7 @@ useapps=None
 ifname= 'all.csv'
 ofname= 'rslt.ods'
 
+
 # we assume here this order in the testLabels list:[' PagePixelOvelayIndex[%]', ' FeatureDistanceError[mm]', ' HorizLinePositionError[mm]', ' TextHeightError[mm]', ' LineNumDifference'] 
 testLabelsShort=['PPOI','FDE', 'HLPE', 'THE', 'LND'] 
 testViewsExpl=[
@@ -145,8 +153,10 @@ HLPEMax = (0.01,5,10,15,20)	#
 THEMax = (0.01,2, 4, 6,8)
 LNDMax = (0.01,0.01,0.01,0.01,0.01)
 lpath = '../'
+#lpath = 'http://bender.dam.fmph.uniba.sk/~milos/'
 
 parsecmd(progdesc)
+if lpath[-1] != '/': lpath = lpath+'/'
 targetApps, testLabels, values = loadCSV(ifname)
 print targetApps
 #ipdb.set_trace()
@@ -278,6 +288,7 @@ for testcase in values.keys():
             pdfpath=lpath+app+"/"+testcase+"."+app+"-pair"
         tc = TableCell(stylename="THstyle")
         tr.addElement(tc)
+        #ipdb.set_trace()
         p = P(stylename=tablecontents,text=unicode("",PWENC))
 	p.addText(" ")
 	link = A(type="simple",href=pdfpath+"-z.pdf", text="F")
