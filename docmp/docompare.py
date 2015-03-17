@@ -12,7 +12,7 @@ import numpy as np
 import cv2, Image
 import sys, getopt, os, tempfile
 import ipdb
-from idisp import disp
+#from idisp import disp
 #ipdb.set_trace()
 from tifffile import TIFFfile
 import SimpleITK as sitk

@@ -1,16 +1,19 @@
 The DoCmp tools are aimed at assessment of interoperability of various office applications using different office document formats.
  
 The package has two software parts: 
-1. Conversion and printing of test documents. For this, one needs the bash shell and the Office program to be used in testing - the rest is included in the package. Conversion and printing was tested on Linux and Windows
+1. Conversion and printing of test documents. For this, one needs the bash shell and the Office program to be used in testing - the rest is included in the package. 
+   Conversion and printing was tested on Linux and Windows
 
-2. Evaluation and reporting. For this one needs the bash shell, Python with some installed modules and the ImageMagick 'convert' program. This was tested on Linux.
+2. Evaluation and reporting. For this one needs the bash shell, Python with some installed modules. This was tested on Linux.
 
+-------------------------
 INSTALLATION (both parts)
 -------------------------
 
-Download the docmp package and unpack it somewhere in the file system. Path of the package is to 
+Download the docmp package and unpack it somewhere in the file system. 
 
-On Linux:
+On Linux 
+--------
 Set environment variables which define applications to be tested on the current system by adding the following lines to the $HOME/.bashrc file and modify them according to the actual situation. Comment out unwanted options or add new ones:
 -----
 # use full paths
@@ -44,6 +47,7 @@ function ao40 () { $AO40PATH/soffice  $* & }
 -----
 
 On Windows:
+----------
 Install bash from the CygWin package. 
 Include the following (or similar) to the .bashrc file:
 
@@ -60,24 +64,52 @@ Comment: If an application can directly print and convert files from a command l
 
 Comment: In the tested setup, Windows was installed in a virtual machine with access to the Linux file system. Thus only one instance of software and test files existed, with different configuration files in each system. This saved a lot of work and mess caused by eventual copying of files.
 
-INSTALLATION (evaluation and reporting tools)
----------------------------------------------
-First install some packages (tested on ubuntu):
-sudo apt-get install python-pip pdftk libimage-exiftool-perl python-numpy imagemagick ipython
-sudo easy_install SimpleITK odfpy
+Evaluation and reporting tools)
+------------------------------
+Only on Linux (nstruction for Ubuntu, Mint and similar):
 
-then enter the docmp subdirectory and install the scripts by
-(sudo) pythod setup.py install
-or
-(sudo) pythod setup.py develop
+1. install the required tools by
+sudo apt-get install python-pip python-setuptools python-numpy python-opencv python-ipdb python-tiffile python-sitk libpython2.7-dev libjpeg-dev libjpeg-dev libz-dev libtiff5-dev libfreetype6-dev exiftool
+2.  Enter docmp/docmp and run
+sudo python setup.py develop
+This will install a few additional python packages 
 
-
+-----
 SETUP
 -----
 Properties of various office application are defined in the officeconf.sh file.
 Modification is needed only if you add a new application.
 
-The tools require a special directory structure, see the the 'testfiles' subdirectory. If an application should provide 'source' files, it requires its own subdirectory for each test case. A source document should be placed here in the 'native' format of the application. For example:
+Two test types are possible:
+1. Test all combinations between the specified applications (the combitest directory, currently - march 2015 - not maintained )
+2. Perform roundtrip tests with respect to one selected application (the roundtrip directory)
+
+The tests require a special directory structure, see the 'config.sh' script in each of them, for example roundtrip/docxtest/config.sh
+This file also lists commands and machines, where they should be issued.
+
+To create a new test:
+1. create a subdirectory in roundtrip or combitest
+2. copy config.sh from another subdirectory of the same tree
+3. add test files
+
+---------------
+Roundtrip tests
+---------------
+read comments in roundtrip/docxtest/config.sh
+For each test file and LO (AO, GD,...) versions there are two tests:
+roundtrip: open by LO, save by LO, open by MS2013 and export as pdf
+print: open by LO and export as pdf
+
+
+-----------------------
+CONVERSION AND PRINTING
+-----------------------
+read comments in roundtrip/docxtest/config.sh
+
+-----------------------------
+probably invalid text follows, related to combitest
+-----------------------------
+If an application should provide 'source' files, it requires its own subdirectory for each test case. A source document should be placed here in the 'native' format of the application. For example:
 testfiles/bullets/LO41/bullets-LO41.odt
 testfiles/bullets/MS13/bullets-MS13.docx
 Applications, which only 'print' documents, do not require their own subdirectory, as for example abiword.
@@ -88,7 +120,7 @@ The configuration file config.sh lists all test cases, tested format and tested 
 CONVERSION AND PRINTING
 -----------------------
 
-WARNING: During conversion an printing no instance of LO and AOO can run!!!
+WARNING: During conversion and printing no other instance of LO and AOO can run!!!
 
 The source documents are fist converted to the tested formats and subsequently printed to pdfs. These are then compared. 
 

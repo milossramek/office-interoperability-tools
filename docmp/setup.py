@@ -13,12 +13,15 @@ setup(
 	#data_files = data_files,
 	packages = find_packages(),
 	scripts = ['docompare.py','doeval.py', 'dolib.py', 'dogenall.sh','doviews.sh', 'gdconvert.py'],
-	#install_requires=[
+	install_requires=[
+		'tifffile>=0.4',
+		'Pillow>=2.6.1',
+		'SimpleITK>=0.8.0',
 		#'numpy>=1.6.1',
 		#'distribute>=0.6.28',
-		#'odfpy>=0.9.6',
+		'odfpy>=0.9.6',
 		#'ipdb>=0.7'
-	#]
+	]
 	#cmdclass = {"uninstall" : uninstall,
 		#"install" : install,
 		#"install_data" : install_data},
