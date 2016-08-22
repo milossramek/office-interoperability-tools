@@ -4,15 +4,15 @@ from setuptools import setup
 setup(
 	# basic stuff here
 	name = "DoCmp",
-	version = "0.6",
-	description = "Tools for processing plant growth image data at GMI",
+	version = "0.7",
+	description = "Tools for evaluation of interoperability of office packages",
 	author = "Milos Sramek",
 	author_email = "milos.sramek@soit.sk",
 	#url = 
 	license = "GPLv3",
 	#data_files = data_files,
 	packages = find_packages(),
-	scripts = ['docompare.py','doeval.py', 'dolib.py', 'dogenall.sh','doviews.sh', 'gdconvert.py'],
+	scripts = ['docompare.py','doeval.py', 'dolib.py', 'dogenall.sh','doviews.sh', 'gdconvert.py', 'msoconvert.sh', 'dogood.sh'],
 	install_requires=[
 		'tifffile>=0.4',
 		'Pillow>=2.6.1',

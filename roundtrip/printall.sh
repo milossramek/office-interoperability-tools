@@ -13,7 +13,7 @@ then
 			(
 			echo Printing `basename $i` in `dirname $i`
 			cd `dirname $i`
-			print$sourceapp `basename $i`
+			print$sourceapp `basename $i` &>/dev/null
 			)
 		done
 	done

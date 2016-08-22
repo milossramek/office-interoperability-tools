@@ -12,7 +12,7 @@ import numpy as np
 import cv2, Image
 import sys, getopt, os, tempfile
 import ipdb
-#from idisp import disp
+from idisp import disp
 #ipdb.set_trace()
 from tifffile import TIFFfile
 import SimpleITK as sitk
@@ -34,7 +34,8 @@ def tmpname():
 	return f.name
 
 def toBin(img, thr=200):
-	return (img < thr).astype(np.uint8)
+    #return (img < thr).astype(np.uint8)
+    return (img < thr).max(axis=2).astype(np.uint8)
 
 def GetLine(img, seglist, seg):
 	"""
@@ -78,15 +79,16 @@ def pdf2array(pdffile, res=300):
 	"""
 	read pdf file and convert it to numpy array
 	return list of pages and dimensions
+        color order is BGR
 	"""
 	tname = tmpname()+'.tif'
-	cmd = 'cat %s | gs -dQUIET -dNOPAUSE -sDEVICE=tiffgray -r%d -sOutputFile=%s - 2>/dev/null'%(pdffile, res, tname)
+	cmd = 'cat %s 2>/dev/null | gs -dQUIET -dNOPAUSE -sDEVICE=tiff24nc -r%d -sOutputFile=%s - 2>/dev/null'%(pdffile, res, tname)
 	os.system(cmd)
-        #ipdb.set_trace()
 	if not os.path.exists(tname): return None, None
         imgfile = TIFFfile(tname)
-        pages = [p.asarray() for p in imgfile.pages[:2]]    # first two pages only
-        shapes = [p.shape for p in imgfile.pages[:2]]
+        pages = [p.asarray() for p in imgfile.pages[:3]]    # first three pages only
+
+        shapes = [p.shape for p in imgfile.pages[:3]]
         os.remove(tname)
         return pages, shapes
 
@@ -98,10 +100,10 @@ def makeSingle(pages, shapes):
         for s in shapes:
             height += s[0]
             width = max(width, s[1])
-        bigpage = np.zeros((height,width), dtype=pages[0].dtype)
+        bigpage = np.zeros((height,width,3), dtype=pages[0].dtype)
         pos=0
         for p, s in zip(pages, shapes):
-            bigpage[pos:pos+s[0],0:s[1]]=p[0:s[0],0:s[1]]
+            bigpage[pos:pos+s[0],0:s[1],:]=p[0:s[0],0:s[1],:]
             pos += s[0]
         return bigpage
 
@@ -115,7 +117,7 @@ def getPagePixelOverlayIndex(iarray1, iarray2):
 	#return 2.0* np.sum((itrim1+itrim2) > 1) / (np.sum(itrim1) + np.sum(itrim2))
 	diff = itrim1 != itrim2
 	ovl = 100*(1.0 - float(np.sum(diff)) / (np.sum(itrim2) + np.sum(itrim1)))
-        rslt = 'PagePixelOvelayIndex[%%]: %2.1f | '%ovl
+        rslt = 'PagePixelOvelayIndex[%%]: %2.1f : '%ovl
 	return rslt
 
 def mergeSingle(ml, tx0, sp0, tx1, sp1):
@@ -239,9 +241,14 @@ def alignLineIndex(l1, l2, halign=True):
 		overlayedLines = ovlLine(ll2, ll1)
 	else:
 		overlayedLines = ovlLine(ll1, ll2)
-	ll1 = distanceitk(ll1)
-	ll2 = distanceitk(ll2)
-	return overlayedLines, (abs(horizPosErr), ovlaps[bf], np.average(abs(ll1-ll2)), np.max(abs(ll1-ll2)))
+	ld1 = distanceitk(ll1)
+	ld2 = distanceitk(ll2)
+        # if one of the images has only 1 values ignore negative distances
+        if ll1.all() or ll2.all():
+            ld1[np.where(ld1<0)]=0
+            ld2[np.where(ld2<0)]=0
+
+	return overlayedLines, (abs(horizPosErr), ovlaps[bf], np.average(abs(ld1-ld2)), np.max(abs(ld1-ld2)))
 
 def lineIndexPage(iarray0, iarray1):
 	"""
@@ -279,6 +286,7 @@ def lineIndexPage(iarray0, iarray1):
 	    cline, ind = alignLineIndex(GetLine(itrim0, tx0, i), GetLine(itrim1, tx1, i), halign=False)
 	    v_lines.append(cline)
 	indices = np.array(indices)
+        #ipdb.set_trace()
 
 	#create a page view to display vertically and horizontally adjusted overlays, taking line spaces from the source (first) page
         # height of the output page: sum of overlayed blobs + sum of spaces from image 1
@@ -295,7 +303,6 @@ def lineIndexPage(iarray0, iarray1):
 		    ar += vh_lines[i].shape[0] + sp0[i][1]
                 else:
 		    ar += vh_lines[i].shape[0]
-        #ipdb.set_trace()
 
 	#create a page view to display vertically adjusted overlays, taking line spaces from the source (first) page
         # height of the output page: sum of overlayed blobs + sum of spaces from image 1
@@ -315,23 +322,26 @@ def lineIndexPage(iarray0, iarray1):
                 else:
 		    ar += v_lines[i].shape[0]
 
+        #ipdb.set_trace()
 	#height error in pixels
 	heightErr=abs(float(itrim0.shape[0]-itrim1.shape[0]))
 	#normalized height error in pixels
-	heightErr = heightErr * (dpi*a4height/i2mm)/float(itrim0.shape[0]+itrim1.shape[0])
+        # normalize the error to standard a4 height - overestimates error of small pages, so commented out
+	#heightErr = heightErr * (dpi*a4height/i2mm)/float(itrim0.shape[0]+itrim1.shape[0])
 
 	#If changing the rslt format, adjust the gentestviews.sh script accordingly
         #linerslt = 'LinePixelOverlayIndex[%%]: %2.1f | FeatureDistanceError[mm]: %2.1f | LinePositionError[mm]: %2.2f |'
 	#linerslt = linerslt%(100*np.average(indices[:,1]), px2mm(np.max(indices[:,3])),px2mm(np.max(indices[:,0]))) 
         linersltDist = 'FeatureDistanceError[mm]: %2.1f '
-	linersltDist = linersltDist%(px2mm(np.max(indices[:,3])))
+	#linersltDist = linersltDist%(px2mm(np.max(indices[:,3])))
+	linersltDist = px2mm(np.max(indices[:,3]))
         linersltHPos = 'HorizLinePositionError[mm]: %2.2f '
-	linersltHPos = linersltHPos%(px2mm(np.max(indices[:,0]))) 
+	#linersltHPos = linersltHPos%(px2mm(np.max(indices[:,0]))) 
+	linersltHPos = px2mm(np.max(indices[:,0]))
 	pagerslt = ' TextHeightError[mm]: %2.2f | LineNumDifference: %2d'
-	pagerslt = pagerslt%((px2mm(heightErr), len(tx1)-len(tx0)))
+	#pagerslt = pagerslt%((px2mm(heightErr), len(tx1)-len(tx0)))
 
-        #ipdb.set_trace()
-	return 1-vh_page, 1-v_page, linersltDist, linersltHPos, pagerslt
+	return 1-vh_page, 1-v_page, linersltDist, linersltHPos, px2mm(heightErr), len(tx1)-len(tx0)
 
 def annotateImg(img, color, size, position, text):
     cv2.putText(img, text, position, cv2.FONT_HERSHEY_PLAIN, size, color, thickness = 2)
@@ -341,10 +351,11 @@ def mergeSide(img1, img2):
     ''' place two images side-by-side'''
     offset=10
     ishape = img1.shape
-    nshape=(img1.shape[0], 2*img1.shape[1]+offset, 3) #shape for numpy
+    nshape=(max(img1.shape[0], img2.shape[0]), img1.shape[1]+img2.shape[1]+offset, 3) #shape for numpy
     big=np.zeros(nshape, dtype=np.uint8)
-    big[:ishape[0],:ishape[1]]=img1
-    big[:ishape[0],ishape[1]+offset:]=img2
+    big[:]=255
+    big[:img1.shape[0],:img1.shape[1]]=img1
+    big[:img2.shape[0],img1.shape[1]+offset:]=img2
     return big
 
 def genside (img1, img2, height, width, name1, name2, txt1, txt2):
@@ -388,18 +399,23 @@ def genoverlay(img1, title, name1, name2, stattxt, img2=None):
 	txt: text to print below the title
 	"""
 
-	if img2 == None:
+	if img2 is None:
 		outimg = 255*(1-img1)
 	else:
-                outimg=np.zeros((img1.shape[0], img1.shape[1], 3), dtype=np.uint8)
-                outimg[...,0] = (255*(1-img1))
-                outimg[...,1] = (255*(1-img2))
-                outimg[...,2] = (255*(1-img2))
+	        s=np.maximum(img1.shape,img2.shape)
+                outimg=np.zeros((s[0], s[1], 3), dtype=np.uint8)
+                #outimg[:img1.shape[0], :img1.shape[1],0] = (255*(1-img1))
+                #outimg[:img2.shape[0], :img2.shape[1],1] = (255*(1-img2))
+                #outimg[:img2.shape[0], :img2.shape[1],2] = (255*(1-img2))
+                outimg[:img1.shape[0], :img1.shape[1],0] = img1
+                outimg[:img2.shape[0], :img2.shape[1],1] = img2
+                outimg[:img2.shape[0], :img2.shape[1],2] = img2
+                outimg = 255*(1-outimg)
 	if annotated:
 	        outimg = annotateImg(outimg, (0, 0, 255), 2, (100, 50), title)
-		txt = "cyan: %s"%name1
+		txt = "cyan: %s %s"%(sourceid,name1)
 	        outimg = annotateImg(outimg, (0, 255, 255), 2, (100, 80), txt)
-		txt = "red: %s"%name2
+		txt = "red: %s %s"%(targetid,name2)
 	        outimg = annotateImg(outimg, (255, 0, 0), 2, (100, 110), txt)
 		#outimg=annotateImg(outimg, 'blue', mm2px(4), mm2px(4), txt)
 	        outimg = annotateImg(outimg, (0, 0, 255), 1.3, (100, 140), stattxt)
@@ -417,7 +433,7 @@ def getBBox(img1, img2=None):
 	"""
 	get a bounding box of nonzero pixels of one or two images
 	"""
-	if img2 == None:
+	if img2 is None:
 		B = np.argwhere(img1)
 		if B.shape[0] == 0:
 			return (0,0),(0,0)
@@ -427,7 +443,7 @@ def getBBox(img1, img2=None):
 		min2, max2 = getBBox(img2)
 		return np.minimum(min1, min2), np.maximum(max1, max2)
 
-def saveRslt(overlayStyle, title, img0, img1, name0, name1, rslt, rsltText):
+def saveRslt(overlayStyle, title, img0, img1, name0, name1, rslt, rsltText, outfile):
     exifcmd = 'exiftool -overwrite_original -Custom1="%s" %s >/dev/null'
     oname = "%s-%s.pdf"%(outfile, overlayStyle)
     if overlayStyle=='s':
@@ -440,33 +456,68 @@ def saveRslt(overlayStyle, title, img0, img1, name0, name1, rslt, rsltText):
 
 def px2mm(val):
 	"""
-	convert 'val' im mm to pixels
+	convert 'val' in mm to pixels
 	"""
 	global dpi, i2mm
 	return val*i2mm/dpi
 
+#testLabelsShort=['PPOI','FDE', 'HLPE', 'THE', 'LND'] 
+def valToGrade(data):
+    """ get grade for individual observed measures """
+    # error grading
+    FDEMax = (0.01,0.5,1,2,4)        #0.5: difference of perfectly fitting AOO/LOO and MS document owing to different character rendering
+    HLPEMax = (0.01,5,10,15,20)        # 
+    THEMax = (0.01,2, 4, 6,8)
+    LNDMax = (0.01,0.01,0.01,0.01,0.01)
+    #ipdb.set_trace()#
+    FDEVal=5
+    for i in range(len(FDEMax)):
+        if FDEMax[i] >float(data[0]):
+            FDEVal=i
+            break
+    HLPEVal=5
+    for i in range(len(HLPEMax)):
+        if HLPEMax[i] > float(data[1]):
+            HLPEVal=i
+            break
+    THEVal=5
+    for i in range(len(THEMax)):
+        if THEMax[i] > float(data[2]):
+            THEVal=i
+            break
+    LNDVal=5
+    for i in range(len(LNDMax)):
+        if LNDMax[i] > abs(float(data[3])):
+            LNDVal=i
+            break
+    #print (FDEVal, HLPEVal, THEVal, LNDVal)
+    return max((FDEVal, HLPEVal, THEVal, LNDVal))
+
 def usage(desc):
-	global outfile, binthr
+	global outfile, binthr, goodThr
 	print sys.argv[0]+':',  desc
 	print "Usage: ", sys.argv[0], "[options]", "source.pdf target.pdf"
 	print "\t-o ................ file to store output view to {default:"+outfile+'}'
 	#print "\t-p ................ report the results of individual pages {default: whole document}"
 	#print "\t-fp ............... use only the first page {default: all pages}"
-	print "\t-d ................ resolution of the converted pdf documen {default: "+str(dpi)+"}"
+	print "\t-d ................ resolution of the converted pdf document {default: "+str(dpi)+"}"
 	print "\t-a ................ annotate each page with file name {default: no annotation}"
 	print "\t-s ................ side-by-side pages {default: all}"
 	print "\t-p ................ page overlay without alignment {default: all}"
 	print "\t-l ................ page overlay with vertical line alignment {default: all}"
 	print "\t-z ................ page overlay with vertical and horizontal line alignment {default: all}"
-	print "\t-t ................ binarization threshold (only red band used( {default: %d}"%binthr
-
+	print "\t-t ................ binarization threshold {default: %d}"%binthr
+	print "\t-b ................ run within the git bisect process (names of the output files will be modified) {default: normal}"
+	print "\t-g int ............ good threshold used in bisecting to distinguish good/bad (1-5) {default: %d}"%goodThr
+	print "\t--source-id string  additional info to be printed in rendered pdf {default: none}"
+	print "\t--target-id string  additional info to be printed in rendered pdf {default: none}"
 	print "\t-v ................ be verbose"
 	print "\t-h ................ this usage"
 
 def parsecmd(desc):
-	global verbose, dpi, Names, annotated, overlayStyle, outfile, binthr
+	global verbose, dpi, Names, annotated, overlayStyle, outfile, binthr, bisecting, goodThr, sourceid, targetid
 	try:
-            opts, Names = getopt.getopt(sys.argv[1:], "hvalpszo:d:t:", ["help", "verbose"])
+            opts, Names = getopt.getopt(sys.argv[1:], "hvalpszbg:o:d:t:", ["help", "verbose", "source-id=", "target-id="])
 	except getopt.GetoptError as err:
 		# print help information and exit:
 		print str(err) # will print something like "option -a not recognized"
@@ -480,6 +531,8 @@ def parsecmd(desc):
 			sys.exit()
 		elif o in ("-a"):
 			annotated = True
+		elif o in ("-b"):
+			bisecting = True
 		elif o in ("-s"):
 			overlayStyle = 's'  #side-by-side
 		elif o in ("-p"):
@@ -488,65 +541,84 @@ def parsecmd(desc):
 			overlayStyle = 'l'  #page overlay, vertical line alignment
 		elif o in ("-z"):
 			overlayStyle = 'z'  #page overlay, vertical and horizontal line alignment
+		elif o in ("-g"):
+			goodThr = int(a)
 		elif o in ("-o"):
 			outfile = a
 		elif o in ("-d"):
 			dpi = int(a)
 		elif o in ("-t"):
 			binthr = int(a)
+		elif o in ("--source-id"):
+                        sourceid=a
+		elif o in ("--target-id"):
+                        targetid=a
 		else:
 			assert False, "unhandled option"
 		# ...
+
 #global definitions
 a4width=210
 a4height=297
 i2mm=25.4	# inch to mm conversion
 annotated = False
+bisecting = False
+goodThr = 3
 overlayStyle = 'a'  #output all versions by default
 progdesc="Compare two pdf documents and return some statistics"
 verbose = False
-outfile = "paircmp.pdf"
 dpi = 200
 binthr = 200
-parsecmd(progdesc)
-if Names == []:
+exifcmd = 'exiftool -overwrite_original -Custom1="%s" %s >/dev/null'
+outfile = "paircmp.pdf"
+sourceid="source"
+targetid="target"
+
+def mainfunc():
+
+    global outfile 
+    parsecmd(progdesc)
+    if Names == []:
 	usage(progdesc)
 	sys.exit(1)
 
-exifcmd = 'exiftool -overwrite_original -Custom1="%s" %s >/dev/null'
+    #if bisecting, use the same name as target (name will be modified)
+    if bisecting: outfile = Names[1]
 
-# get rid of extension, if there is one
-if outfile[-4:] == '.pdf':
-    outfile = outfile[:-4]
-try:
+    # get rid of extension, if there is one
+    if outfile[-4:] == '.pdf':
+        outfile = outfile[:-4]
+    try:
         #load documents
 	pages1, shapes1 = pdf2array(Names[0], dpi)
+        badpagetxt=""
+        if bisecting: badpagetxt="-bad"
         if pages1 == None:
-            raise DoException("failed to open %s."%(Names[0]))
+            raise DoException("1failed to open %s."%(Names[0]))
 	pages2, shapes2 = pdf2array(Names[1], dpi)
         if pages2 == None:
             img1 = makeSingle(pages1, shapes1)
 	    outimg = genoverlay(toBin(img1,binthr), "target file '%s' cannot be loaded, test failed"%(Names[1]), Names[0], Names[1], "")
             rsltText="-:-:-:-:-:-:-:-:-:open"  #dummy result string 10 dashes necessary
-            Image.fromarray(outimg).save(outfile+'-p.pdf')
-	    os.system(exifcmd%(rsltText, outfile+'-p.pdf'))
-            Image.fromarray(outimg).save(outfile+'-l.pdf')
-	    os.system(exifcmd%(rsltText, outfile+'-l.pdf'))
-            Image.fromarray(outimg).save(outfile+'-z.pdf')
-	    os.system(exifcmd%(rsltText, outfile+'-z.pdf'))
-            Image.fromarray(outimg).save(outfile+'-s.pdf')
-	    os.system(exifcmd%(rsltText, outfile+'-s.pdf'))
+            Image.fromarray(outimg).save(outfile+badpagetxt+'-p.pdf')
+	    os.system(exifcmd%(rsltText, outfile+badpagetxt+'-p.pdf'))
+            Image.fromarray(outimg).save(outfile+badpagetxt+'-l.pdf')
+	    os.system(exifcmd%(rsltText, outfile+badpagetxt+'-l.pdf'))
+            Image.fromarray(outimg).save(outfile+badpagetxt+'-z.pdf')
+	    os.system(exifcmd%(rsltText, outfile+badpagetxt+'-z.pdf'))
+            Image.fromarray(outimg).save(outfile+badpagetxt+'-s.pdf')
+	    os.system(exifcmd%(rsltText, outfile+badpagetxt+'-s.pdf'))
             raise DoException("failed to open %s."%(Names[1]))
 
-        #ipdb.set_trace()
-        shapes = [(min(a[0],b[0]),min(a[1],b[1])) for a,b in zip(shapes1, shapes2)] 
+        #!!!shapes = [(min(a[0],b[0]),min(a[1],b[1])) for a,b in zip(shapes1, shapes2)] 
         # create single image for each
         npages = min(len(pages1), len(pages2))
-        img1 = makeSingle(pages1, shapes)
-        img2 = makeSingle(pages2, shapes)
+        #ipdb.set_trace()
+        img1 = makeSingle(pages1, shapes1)
+        img2 = makeSingle(pages2, shapes2)
 
-        if not (img2 != img2[0,0]).any() or not (img1 != img1[0,0]).any():
-            if not (img1 != img1[0,0]).any():
+        if not (img2 != img2[0,0,0]).any() or not (img1 != img1[0,0,0]).any():
+            if not (img1 != img1[0,0,0]).any():
                 msg= "Source pdf '%s' is empty, nothing to test"%(Names[0])
                 rsltText="-:0:-:0:-:0:-:0:-:0"  #dummy result string 10 dashes necessary
             else:
@@ -554,45 +626,70 @@ try:
                 rsltText="-:-:-:-:-:-:-:-:-:empty"  #dummy result string 10 dashes necessary
 
 	    outimg = genoverlay(toBin(img1,binthr), msg, Names[0], Names[1], "")
-            Image.fromarray(outimg).save(outfile+'-p.pdf')
-	    os.system(exifcmd%(rsltText, outfile+'-p.pdf'))
-            Image.fromarray(outimg).save(outfile+'-l.pdf')
-	    os.system(exifcmd%(rsltText, outfile+'-l.pdf'))
-            Image.fromarray(outimg).save(outfile+'-z.pdf')
-	    os.system(exifcmd%(rsltText, outfile+'-z.pdf'))
-            Image.fromarray(outimg).save(outfile+'-s.pdf')
-	    os.system(exifcmd%(rsltText, outfile+'-s.pdf'))
+            Image.fromarray(outimg).save(outfile+badpagetxt+'-p.pdf')
+	    os.system(exifcmd%(rsltText, outfile+badpagetxt+'-p.pdf'))
+            Image.fromarray(outimg).save(outfile+badpagetxt+'-l.pdf')
+	    os.system(exifcmd%(rsltText, outfile+badpagetxt+'-l.pdf'))
+            Image.fromarray(outimg).save(outfile+badpagetxt+'-z.pdf')
+	    os.system(exifcmd%(rsltText, outfile+badpagetxt+'-z.pdf'))
+            Image.fromarray(outimg).save(outfile+badpagetxt+'-s.pdf')
+	    os.system(exifcmd%(rsltText, outfile+badpagetxt+'-s.pdf'))
             raise DoException(msg)
 
 	#crop to common size 
 	s1 = img1.shape
 	s2 = img2.shape
 	s=np.minimum(s1,s2)
-	img1 = img1[:s[0],:s[1]]
-	img2 = img2[:s[0],:s[1]]
+	#img1 = img1[:s[0],:s[1]]
+	#img2 = img2[:s[0],:s[1]]
         bimg1 = toBin(img1,binthr)
         bimg2 = toBin(img2,binthr)
 
 	plainOvlRslt = getPagePixelOverlayIndex(bimg1, bimg2)
-	lineVHOvlPage, lineVOvlPage, lineOvlDistRslt, lineOvlHPosRslt, pageHeightRslt = lineIndexPage(bimg1, bimg2)
-	rsltText = plainOvlRslt+lineOvlDistRslt+ ' | ' +lineOvlHPosRslt+' | '+pageHeightRslt
-	rsltText = rsltText.replace('|',':')
+	lineVHOvlPage, lineVOvlPage, lineOvlDistRslt, lineOvlHPosRslt, pageHeightRslt, pageLinesRslt = lineIndexPage(bimg1, bimg2)
+ 
+        le1 = 'FeatureDistanceError[mm]: %2.1f '%lineOvlDistRslt
+        le2 = ': HorizLinePositionError[mm]: %2.2f '%lineOvlHPosRslt
+	le3 = ': TextHeightError[mm]: %2.2f '%pageHeightRslt
+	le4 = ': LineNumDifference: %2d'%pageLinesRslt
+	grade = valToGrade((lineOvlDistRslt, lineOvlHPosRslt, pageHeightRslt, pageLinesRslt))
+
+        if bisecting:
+            if grade <= goodThr:
+                outfile = outfile+"-good"
+            else:
+                outfile = outfile+"-bad"
+
+	#pagerslt = pagerslt%((px2mm(heightErr), len(tx1)-len(tx0)))
+
+	rsltText = plainOvlRslt + le1 + le2 + le3 + le4
         # command to write statistics to the pdf file, to be used in report creation
 
+        #ipdb.set_trace()
         #options: s, p, l z
 	if overlayStyle == 'p' or overlayStyle == 'a':
-            saveRslt('p',  'Page overlay, no alignment', bimg1, bimg2, Names[0], Names[1], plainOvlRslt+pageHeightRslt, rsltText)
+            saveRslt('p',  'Page overlay, no alignment', bimg1, bimg2, Names[0], Names[1], plainOvlRslt+le3, rsltText, outfile)
 
 	if overlayStyle == 'l' or overlayStyle == 'a':
-            saveRslt('l', 'Page overlay, vertically aligned lines', lineVOvlPage, None, Names[0], Names[1], lineOvlHPosRslt, rsltText)
+            saveRslt('l', 'Page overlay, vertically aligned lines', lineVOvlPage, None, Names[0], Names[1], le2, rsltText, outfile)
 
 	if overlayStyle == 'z' or overlayStyle == 'a':
-            saveRslt('z', 'Page overlay, vertically and horizontally aligned lines', lineVHOvlPage, None, Names[0], Names[1], lineOvlDistRslt, rsltText)
+            saveRslt('z', 'Page overlay, vertically and horizontally aligned lines', lineVHOvlPage, None, Names[0], Names[1], le1, rsltText, outfile)
 
+        # side-by-side
 	if overlayStyle == 's' or overlayStyle == 'a':
-            saveRslt('s', '', img1, img2, Names[0], Names[1], lineOvlDistRslt, rsltText)
+            saveRslt('s', '', img1, img2, Names[0], Names[1], le1, rsltText, outfile)
 
-except DoException, e:
+        # set exit status
+        if grade <= goodThr:
+            sys.exit(0)
+        else:
+            sys.exit(1)
+
+    except DoException, e:
 	sys.stderr.write(e.what+" ("+Names[0]+", "+Names[1]+")\n")
-	print e.what+" ("+Names[0]+", "+Names[1]+")"
+	#print e.what+" ("+Names[0]+", "+Names[1]+")"
+        sys.exit(125)
 
+if __name__=="__main__":
+    mainfunc()

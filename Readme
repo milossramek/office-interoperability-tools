@@ -107,6 +107,10 @@ CONVERSION AND PRINTING
 read comments in roundtrip/docxtest/config.sh
 
 -----------------------------
+-----------------------------
+-----------------------------
+-----------------------------
+-----------------------------
 probably invalid text follows, related to combitest
 -----------------------------
 If an application should provide 'source' files, it requires its own subdirectory for each test case. A source document should be placed here in the 'native' format of the application. For example:

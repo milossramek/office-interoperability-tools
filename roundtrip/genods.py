@@ -24,53 +24,66 @@ PWENC = "utf-8"
 progdesc='Derive some results from pdf tests'
 
 def usage(desc):
-	print sys.argv[0]+':',  desc, ofname, ifname
-	print "Usage: ", sys.argv[0], "[options]"
-	print "\t-i infile ... ..... report {default: "+ifname+"}"
-	print "\t-o outfile ........ report {default: "+ofname+"}"
-	print "\t-a ................ list of applications to include in report {all}"
-	print "\t-p url ............ url of the location the pair pdf file will be (manually) copied to"
-	print "\t-v ................ be verbose"
-	print "\t-h ................ this usage"
+    print sys.argv[0]+':',  desc, ofname, ifname,rfname, tm1roundtrip, tm1print
+    print "Usage: ", sys.argv[0], "[options]"
+    print "\t-i infile.csv ... ..... report {default: "+ifname+"}"
+    print "\t-o outfile.csv ........ report {default: "+ofname+"}"
+    print "\t-r rankfile.csv ....... document ranking"
+    print "\t-t tagMax1-roundtrip.csv . document tags"
+    print "\t-n tagMax1-print.csv ..... document tags"
+    print "\t-a .................... list of applications to include in report {all}"
+    print "\t-p url ................ url of the location the pair pdf file will be (manually) copied to"
+    print "\t-l .................... add all links {default: last only}"
+    print "\t-v .................... be verbose"
+    print "\t-h .................... this usage"
 
 def parsecmd(desc):
-	global verbose, useapps, ofname, ifname, lpath
-	try:
-            opts, Names = getopt.getopt(sys.argv[1:], "hvi:o:a:p:", ["help", "verbose"])
-	except getopt.GetoptError as err:
-		# print help information and exit:
-		print str(err) # will print something like "option -a not recognized"
-		usage(desc)
-		sys.exit(2)
-	for o, a in opts:
-		if o in ("-v", "--verbose"):
-			verbose = True
-		elif o in ("-h", "--help"):
-			usage(desc)
-			sys.exit()
-		elif o in ("-o"):
-			ofname = a
-		elif o in ("-i"):
-			ifname = a
-		elif o in ("-a"):
-			useapps = a.split()
-		elif o in ("-p"):
-			lpath = a
-		else:
-			assert False, "unhandled option"
+    global verbose, useapps, ofname, ifname, lpath, rfname, showalllinks, tm1print, tm1roundtrip
+    try:
+        opts, Names = getopt.getopt(sys.argv[1:], "hvli:o:a:p:r:t:n:", ["help", "verbose"])
+    except getopt.GetoptError as err:
+        # print help information and exit:
+        print str(err) # will print something like "option -a not recognized"
+        usage(desc)
+        sys.exit(2)
+    for o, a in opts:
+        if o in ("-v", "--verbose"):
+            verbose = True
+        elif o in ("-h", "--help"):
+            usage(desc)
+            sys.exit()
+        elif o in ("-o"):
+            ofname = a
+        elif o in ("-i"):
+            ifname = a
+        elif o in ("-t"):
+             tm1roundtrip= a
+        elif o in ("-n"):
+             tm1print= a
+        elif o in ("-r"):
+            rfname = a
+        elif o in ("-l"):
+            showalllinks = True
+        elif o in ("-a"):
+            useapps = a.split()
+        elif o in ("-p"):
+            lpath = a
+        else:
+            assert False, "unhandled option"
 
 def loadCSV(csvfile):
-	""" Load the results
-	Retuns: ID list of ints, ROI (array) of strings
-	"""
-	# get information about the slices first
+        """ Load the results
+        Retuns: ID list of ints, ROI (array) of strings
+        """
+        # get information about the slices first
         vcnt=5  # we expect 5 error measures
         values = {}
-	with open(csvfile, 'rb') as csvfile:
-		reader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONE)
-		values = {}
-		for row in reader:
-			if(reader.line_num == 1): 
+        with open(csvfile, 'rb') as csvfile:
+                reader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONE)
+                values = {}
+                cnt = 0
+                for row in reader:
+                        if(reader.line_num == 1): 
                             apps=[]
                             for i in range(len(row)):
                                 if row[i] != '': apps.append(row[i])
@@ -78,43 +91,69 @@ def loadCSV(csvfile):
                         elif(reader.line_num == 2): 
                             labels=row[1:vcnt+1]
                         elif(reader.line_num > 2): 
-			    #ipdb.set_trace()#
+                            #ipdb.set_trace()#
                             d={}
                             for i in range(len(apps)):
                                 d[apps[i]]=row[1+vcnt*i: 1+vcnt*(i+1)]
                             values[row[0]] = d
+                        cnt +=1
+                        #if cnt > 100: break
         return apps, labels, values 
+
+def loadRanks(csvfile):
+        """ Load ranking
+        Retuns: ID list of ints, ROI (array) of strings
+        """
+        # get information about the slices first
+        values = {}
+        with open(csvfile, 'rb') as csvfile:
+                reader = csv.reader(csvfile, delimiter=' ', quoting=csv.QUOTE_NONE)
+                for row in reader:
+                    values[row[0].split('.')[0]] = row[1:]
+        return values
+
+def loadTags(csvfile):
+        """ Load ranking
+        Retuns: ID list of ints, ROI (array) of strings
+        """
+        # get information about the slices first
+        values = set()
+        with open(csvfile, 'rb') as csvfile:
+                reader = csv.reader(csvfile, delimiter=' ', quoting=csv.QUOTE_NONE)
+                for row in reader:
+                    if len(row) > 0: values.add(row[0])
+        return values
 
 #testLabelsShort=['PPOI','FDE', 'HLPE', 'THE', 'LND'] 
 def valToGrade(data):
-	""" get grade for individual observed measures
-	"""
-	global FDEMax, HLPEMax, THEMax, LNDMax
-	#ipdb.set_trace()#
+        """ get grade for individual observed measures
+        """
+        global FDEMax, HLPEMax, THEMax, LNDMax
+        #ipdb.set_trace()#
         if data[-1] == "empty":
             return [6,6,6,6]
         if data[-1] == "open":
             return [7,7,7,7]
         FDEVal=5
-	for i in range(len(FDEMax)):
+        for i in range(len(FDEMax)):
             if FDEMax[i] >float(data[0]):
-		FDEVal=i
-		break
+                FDEVal=i
+                break
         HLPEVal=5
-	for i in range(len(HLPEMax)):
+        for i in range(len(HLPEMax)):
             if HLPEMax[i] > float(data[1]):
-		HLPEVal=i
-		break
+                HLPEVal=i
+                break
         THEVal=5
-	for i in range(len(THEMax)):
+        for i in range(len(THEMax)):
             if THEMax[i] > float(data[2]):
-		THEVal=i
-		break
+                THEVal=i
+                break
         LNDVal=5
-	for i in range(len(LNDMax)):
+        for i in range(len(LNDMax)):
             if LNDMax[i] > abs(float(data[3])):
-		LNDVal=i
-		break
+                LNDVal=i
+                break
         return [FDEVal, HLPEVal, THEVal, LNDVal]
 
 def addAnn(txt):
@@ -130,26 +169,162 @@ def addAnnL(txtlist):
             ann.addElement(annp)
         return ann
 
+def getRsltTable(testType):
+    global ranks, showalllinks, useapps, tagsr, tagsp
+    if testType == "all":
+        aux=targetApps
+    else:
+        aux=[]
+        for t in targetApps:
+            if t.find(testType) >=0:
+                aux.append(t)
+    print aux
+
+    if useapps is None:
+        targetAppsSel=aux
+    else:
+        targetAppsSel=[]
+        for t in aux:
+            if t.split()[0] in useapps:
+                targetAppsSel.append(t)
+    print targetAppsSel
+
+
+    # Start the table, and describe the columns
+    table = Table(name=testType)
+    table.addElement(TableColumn(numbercolumnsrepeated=1,stylename=nameColStyle))
+    for i in targetAppsSel:
+        for i in range(len(testLabels)-1):
+            table.addElement(TableColumn(stylename=valColStyle))
+            table.addElement(TableColumn(stylename=linkColStyle))
+        table.addElement(TableColumn(stylename=linkColStyle))
+    table.addElement(TableColumn(stylename=rankColStyle))
+    table.addElement(TableColumn(stylename=tagColStyle))
+    table.addElement(TableColumn(stylename=tagColStyle))
+    table.addElement(TableColumn(stylename=tagColStyle))
+    
+    #First row: application names
+    tr = TableRow()
+    table.addElement(tr)
+    tc = TableCell() #empty cell
+    tr.addElement(tc)
+    appcolumns=len(testLabels)
+    for a in targetAppsSel: 
+        print a
+        tc = TableCell(numbercolumnsspanned=2*(appcolumns-1), stylename="THstyle")
+        tr.addElement(tc)
+        p = P(stylename=tablecontents,text=unicode("Target: %s "%a, PWENC))
+        tc.addElement(p)
+        for i in range(2*(appcolumns-1)-1): # create empty cells for the merged one
+            tc = TableCell()
+            tr.addElement(tc)
+        tc = TableCell(stylename="Csepstyle")
+        tr.addElement(tc)
+    #Second row: test names
+    tr = TableRow()
+    table.addElement(tr)
+    tc = TableCell(stylename="THstyle") #empty cell
+    tr.addElement(tc)
+    p = P(stylename=tablecontents,text=unicode("Test case",PWENC))
+    tc.addElement(p)
+    for a in targetAppsSel: 
+        for tl in range(1, len(testLabelsShort)):   # we do not show the PPOI value
+            tc = TableCell(numbercolumnsspanned=2,stylename="THstyle")
+            tr.addElement(tc)
+            p = P(stylename=tablecontents,text=unicode(testLabelsShort[-tl],PWENC))
+            tc.addElement(p)
+            tc.addElement(addAnn(testAnnotation[testLabelsShort[-tl]]))
+            tc = TableCell()    #the merged cell
+            tr.addElement(tc)
+        tc = TableCell(stylename="Csepstyle")
+        tr.addElement(tc)
+        #tc = TableCell(stylename="THstyle")
+        #tr.addElement(tc)
+        #p = P(stylename=tablecontents,text=unicode("Views",PWENC))
+        #tc.addElement(p)
+        #tc.addElement(addAnnL(testViewsExpl))
+    if ranks:
+        for c in ['rank', 'tag 1', 'tag 2', 'tag 3']:
+            tc = TableCell(stylename="THstyle")
+            tr.addElement(tc)
+            p = P(stylename=tablecontents,text=unicode(c,PWENC))
+            tc.addElement(p)
+
+    #ipdb.set_trace()
+    for testcase in values.keys():
+        #testcase=testcase.split('/')[1]
+        tr = TableRow()
+        table.addElement(tr)
+        tc = TableCell()
+        tr.addElement(tc)
+        p = P(stylename=tablecontents,text=unicode(testcase,PWENC))
+        tc.addElement(p)
+        for a in targetAppsSel: 
+            grades = valToGrade(values[testcase][a][1:])
+            #grades = values[testcase][a][1:]
+            #for val in values[testcase][a][1:]:   # we do not show the PPOI value
+            #print grades
+            viewTypes=['s','p','l','z']
+            app, ttype = a.split()
+            if ttype=="roundtrip":
+                pdfpath=lpath+app+"/"+testcase+"-pair"
+            else:
+                pdfpath=lpath+app+"/"+testcase+"."+app+"-pair"
+            for (grade, viewType) in zip(reversed(grades), viewTypes):   # we do not show the PPOI value
+                tc = TableCell(valuetype="float", value=str(grade), stylename='C'+str(int(grade))+'style')
+                tr.addElement(tc)
+                tc = TableCell(stylename="THstyle")
+                tr.addElement(tc)
+                p = P(stylename=tablecontents,text=unicode("",PWENC))
+                link = A(type="simple",href=pdfpath+"-%s.pdf"%viewType, text=">")
+                if showalllinks or a==targetAppsSel[-1]:
+                    p.addElement(link)
+                tc.addElement(p)
+            tc = TableCell(stylename="Csepstyle")
+            tr.addElement(tc)
+            #ipdb.set_trace()#
+        if ranks:
+            #ipdb.set_trace()
+            rankinfo = ranks[testcase.split('/')[1]]
+            #tc = TableCell(valuetype="float", value=str("%.3f"%float(rankinfo[0])))
+            tc = TableCell(valuetype="float", value=str("%.3f"%float(rankinfo[0])), stylename=rankCellStyle)
+            tr.addElement(tc)
+            for c in rankinfo[1:]:
+                if testType == "print" and not c in tagsp: 
+                    tc = TableCell()
+                    tr.addElement(tc)
+                    p = P(stylename=tablecontents,text=unicode(c,PWENC))
+                    tc.addElement(p)
+                if testType == "roundtrip" and not c in tagsr: 
+                    tc = TableCell()
+                    tr.addElement(tc)
+                    p = P(stylename=tablecontents,text=unicode(c,PWENC))
+                    tc.addElement(p)
+    return table
+
 progdesc='Derive some results from pdf tests'
 verbose = False
 useapps=None
+showalllinks=False
 
 ifname= 'all.csv'
 ofname= 'rslt.ods'
-
+rfname= None
+tm1roundtrip= None
+tm1print= None
 
 # we assume here this order in the testLabels list:[' PagePixelOvelayIndex[%]', ' FeatureDistanceError[mm]', ' HorizLinePositionError[mm]', ' TextHeightError[mm]', ' LineNumDifference'] 
 testLabelsShort=['PPOI','FDE', 'HLPE', 'THE', 'LND'] 
-testViewsExpl=[
-    'Links to views corresponding left to right to the grades on the left. ' 
-    'F: overlay of lines aligned verically and horizontally.', 
-    'H: overlay of lines aligned only verically.', 
-    'T: page overlay with no alignment.', 
-    'L: side by side view.'] 
+testAnnotation = {
+        'FDE': "Feature Distance Error / overlay of lines aligned verically and horizontally", 
+        'HLPE': "Horiz. Line Position Error / overlay of lines aligned only verically",
+        'THE': "Text Height Error / page overlay with no alignment", 
+        'LND': "Line Number Difference / side by side view"
+        }
 
 
-FDEMax = (0.01,0.5,1,2,4)	#0.5: difference of perfectly fitting AOO/LOO and MS document owing to different character rendering
-HLPEMax = (0.01,5,10,15,20)	# 
+FDEMax = (0.01,0.5,1,2,4)        #0.5: difference of perfectly fitting AOO/LOO and MS document owing to different character rendering
+HLPEMax = (0.01,5,10,15,20)        # 
 THEMax = (0.01,2, 4, 6,8)
 LNDMax = (0.01,0.01,0.01,0.01,0.01)
 lpath = '../'
@@ -158,8 +333,18 @@ lpath = '../'
 parsecmd(progdesc)
 if lpath[-1] != '/': lpath = lpath+'/'
 targetApps, testLabels, values = loadCSV(ifname)
-print targetApps
-#ipdb.set_trace()
+ranks= None
+if rfname:
+    ranks=loadRanks(rfname)
+tagsr= None
+if rfname:
+    tagsr=loadTags(tm1roundtrip)
+tagsp= None
+if rfname:
+    tagsp=loadTags(tm1print)
+
+print "targetApps: ",targetApps
+
 textdoc = OpenDocumentSpreadsheet()
 
 # Create automatic styles for the column widths.
@@ -168,14 +353,25 @@ nameColStyle = Style(name="nameColStyle", family="table-column")
 nameColStyle.addElement(TableColumnProperties(columnwidth="4cm"))
 textdoc.automaticstyles.addElement(nameColStyle)
 
-viewColStyle = Style(name="viewColStyle", family="table-column")
-viewColStyle.addElement(TableColumnProperties(columnwidth="2cm"))
-textdoc.automaticstyles.addElement(viewColStyle)
+tagColStyle = Style(name="tagColStyle", family="table-column")
+tagColStyle.addElement(TableColumnProperties(columnwidth="5cm"))
+tagColStyle.addElement(ParagraphProperties(textalign="left")) #??
+textdoc.automaticstyles.addElement(tagColStyle)
+
+rankColStyle = Style(name="rankColStyle", family="table-column")
+rankColStyle.addElement(TableColumnProperties(columnwidth="1.5cm"))
+rankColStyle.addElement(ParagraphProperties(textalign="center")) #??
+textdoc.automaticstyles.addElement(rankColStyle)
 
 valColStyle = Style(name="valColStyle", family="table-column")
-valColStyle.addElement(TableColumnProperties(columnwidth="1.1cm"))
+valColStyle.addElement(TableColumnProperties(columnwidth="0.9cm"))
 valColStyle.addElement(ParagraphProperties(textalign="center")) #??
 textdoc.automaticstyles.addElement(valColStyle)
+
+linkColStyle = Style(name="linkColStyle", family="table-column")
+linkColStyle.addElement(TableColumnProperties(columnwidth="0.3cm"))
+linkColStyle.addElement(ParagraphProperties(textalign="center")) #??
+textdoc.automaticstyles.addElement(linkColStyle)
 
 # Create a style for the table content. One we can modify
 # later in the word processor.
@@ -195,8 +391,14 @@ C0.addElement(TableCellProperties(backgroundcolor="#00FF00"))
 C0.addElement(ParagraphProperties(textalign="center"))
 textdoc.styles.addElement(C0)
 
+Csep = Style(name="Csepstyle",family="table-cell", parentstylename='Standard', displayname="Color style Sep ")
+#Csep.addElement(TableCellProperties(backgroundcolor="#FF99FF"))
+Csep.addElement(ParagraphProperties(textalign="center"))
+textdoc.styles.addElement(Csep)
+
 C1 = Style(name="C1style",family="table-cell", parentstylename='Standard', displayname="Color style 1")
-C1.addElement(TableCellProperties(backgroundcolor="#AAFF00"))
+#C1.addElement(TableCellProperties(backgroundcolor="#AAFF00"))
+C1.addElement(TableCellProperties(backgroundcolor="#00FF00"))
 C1.addElement(ParagraphProperties(textalign="center"))
 textdoc.styles.addElement(C1)
 
@@ -220,91 +422,16 @@ C5.addElement(TableCellProperties(backgroundcolor="#FF0000"))
 C5.addElement(ParagraphProperties(textalign="center"))
 textdoc.styles.addElement(C5)
 
-# Start the table, and describe the columns
-table = Table(name="Overview")
-table.addElement(TableColumn(numbercolumnsrepeated=1,stylename=nameColStyle))
-for i in targetApps:
-    table.addElement(TableColumn(numbercolumnsrepeated=len(testLabels)-1,stylename=valColStyle))
-    table.addElement(TableColumn(numbercolumnsrepeated=1,stylename=viewColStyle))
+rankCellStyle = Style(name="rankCellStyle",family="table-cell", parentstylename='Standard', displayname="rankCellStyle")
+#rankCellStyle.addElement(TableCellProperties(backgroundcolor="#FFFFFF"))
+rankCellStyle.addElement(ParagraphProperties(textalign="center"))
+textdoc.styles.addElement(rankCellStyle)
 
-#First row: application names
-tr = TableRow()
-table.addElement(tr)
-tc = TableCell() #empty cell
-tr.addElement(tc)
-appcolumns=len(testLabels)
-for a in targetApps: 
-    print a
-    tc = TableCell(numbercolumnsspanned=appcolumns, stylename="THstyle")
-    tr.addElement(tc)
-    p = P(stylename=tablecontents,text=unicode("Target application: %s "%a, PWENC))
-    tc.addElement(p)
-    for i in range(appcolumns-1): # create empty cells for the merged one
-        tc = TableCell()
-        tr.addElement(tc)
-#Second row: test names
-tr = TableRow()
-table.addElement(tr)
-tc = TableCell(stylename="THstyle") #empty cell
-tr.addElement(tc)
-p = P(stylename=tablecontents,text=unicode("Test case",PWENC))
-tc.addElement(p)
-for a in targetApps: 
-    for tl in range(1, len(testLabelsShort)):   # we do not show the PPOI value
-        tc = TableCell(stylename="THstyle")
-        tr.addElement(tc)
-        p = P(stylename=tablecontents,text=unicode(testLabelsShort[tl],PWENC))
-        tc.addElement(p)
-        tc.addElement(addAnn(testLabels[tl]))
-    tc = TableCell(stylename="THstyle")
-    tr.addElement(tc)
-    p = P(stylename=tablecontents,text=unicode("Views",PWENC))
-    tc.addElement(p)
-    tc.addElement(addAnnL(testViewsExpl))
-
-for testcase in values.keys():
-    print testcase
-    tr = TableRow()
-    table.addElement(tr)
-    tc = TableCell()
-    tr.addElement(tc)
-    p = P(stylename=tablecontents,text=unicode(testcase,PWENC))
-    tc.addElement(p)
-    for a in targetApps: 
-        grades = valToGrade(values[testcase][a][1:])
-        #grades = values[testcase][a][1:]
-        #for val in values[testcase][a][1:]:   # we do not show the PPOI value
-        #print grades
-        for val in grades:   # we do not show the PPOI value
-            tc = TableCell(valuetype="float", value=str(val), stylename='C'+str(int(val))+'style')
-            tr.addElement(tc)
-            p = P(text=str(val))
-            tc.addElement(p)
-	#ipdb.set_trace()#
-        app, ttype = a.split()
-        if ttype=="roundtrip":
-            pdfpath=lpath+app+"/"+testcase+"-pair"
-        else:
-            pdfpath=lpath+app+"/"+testcase+"."+app+"-pair"
-        tc = TableCell(stylename="THstyle")
-        tr.addElement(tc)
-        #ipdb.set_trace()
-        p = P(stylename=tablecontents,text=unicode("",PWENC))
-	p.addText(" ")
-	link = A(type="simple",href=pdfpath+"-z.pdf", text="F")
-	p.addElement(link)
-	p.addText("  ")
-	link = A(type="simple",href=pdfpath+"-l.pdf", text="H")
-	p.addElement(link)
-	p.addText("  ")
-	link = A(type="simple",href=pdfpath+"-p.pdf", text="T")
-	p.addElement(link)
-	p.addText("  ")
-	link = A(type="simple",href=pdfpath+"-s.pdf", text="L")
-	p.addElement(link)
-        tc.addElement(p)
-
-
+table = getRsltTable("print")
 textdoc.spreadsheet.addElement(table)
+table = getRsltTable("roundtrip")
+textdoc.spreadsheet.addElement(table)
+#table = getRsltTable("all", False)
+#textdoc.spreadsheet.addElement(table)
 textdoc.save(ofname)
     

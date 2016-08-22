@@ -24,8 +24,9 @@ sourcedir="orig"	#copy test files here (docx in this case, may have subdirectori
 
 # applications to test. E.g. to enter LO44 here a LO44PROG environment variable should exist - read the readme file above
 #rtripapps="GD LO40 MS07 MS10 LO41 LO42 LO43 LO44"
-#rtripapps="LO40 LO41 LO42 LO43 LO44"
-rtripapps="LO40"
+rtripapps="LO40 LO41 LO42 LO43 LO44 LO50"
+#rtripapps="LO50"
 
 # reference application
+#sourceapp="MSWINE"
 sourceapp="MS13"

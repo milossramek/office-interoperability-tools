@@ -21,7 +21,8 @@ for a in `echo $rtripapps`; do
 		for i in $files; do
 			ofile=${i/$sourcedir/$a}
 			../doconv.sh -f $format -a $a -i $i -o $ofile
-			../doconv.sh -f pdf -a $a -i $i -o `dirname $ofile`/`basename $ofile .$format`.$a.pdf
+			ofile2=`dirname $ofile`/`basename $ofile .$format`.$a.pdf
+			../doconv.sh -f pdf -a $a -i $i -o $ofile2
 		done
 	else
 		echo "$0 warning: $a conversion executable not defined. Is this the right system?" 2>&1
