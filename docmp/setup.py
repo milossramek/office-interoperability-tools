@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 from setuptools import setup
 setup(
 	# basic stuff here
-	name = "DoCmp",
+	name = "OfficeITools",
 	version = "0.7",
 	description = "Tools for evaluation of interoperability of office packages",
 	author = "Milos Sramek",

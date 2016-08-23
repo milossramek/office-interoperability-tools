@@ -189,6 +189,7 @@ def alignLineIndex(l1, l2, halign=True):
 	"""
 	# align in the horizontal direction first
 	# estimate horizontal position error by correletion
+        #ipdb.set_trace()
 	cw = min(l2.shape[1],l1.shape[1])
 	l1 = l1[:,:cw]
 	l2 = l2[:,:cw]
@@ -211,12 +212,8 @@ def alignLineIndex(l1, l2, halign=True):
 		#ipdb.set_trace()
 
 	# find position with best alignment in the vertical direction
-	#sum along rows
-	sr1 = np.sum(l1, axis=1)
-	sr2 = np.sum(l2, axis=1)
-
-	#swap so that sr2 is the one with more lines
-	if len(sr1) > len(sr2):
+	#swap so that l2 is the one with more lines
+        if l1.shape[0] > l2.shape[0]:
 		aux=l1
 		l1=l2
 		l2=aux
@@ -233,14 +230,15 @@ def alignLineIndex(l1, l2, halign=True):
 		    ovlaps[i] = 1.0 - float(np.sum(diff)) / (np.sum(ll2) + np.sum(ll1))
 
 	bf = ovlaps.argmax(); # best fit position
-	ll1 = np.zeros(l2.shape,dtype=np.uint8)
-	ll1[bf:bf+l1.shape[0]] = l1
-	ll2 = np.zeros(l2.shape,dtype=np.uint8)
-	ll2[0:l2.shape[0]] = l2
-	if len(sr1) > len(sr2):
+        ll1=l2  # keep the missing lines equal to l2, may help in table borders 
+        ll1[bf:bf+l1.shape[0],:] = l1 
+        #crop l2 to the size of l1 at the best fit position
+        ll2=l2
+        if l1.shape[0] > l2.shape[0]:
 		overlayedLines = ovlLine(ll2, ll1)
 	else:
 		overlayedLines = ovlLine(ll1, ll2)
+
 	ld1 = distanceitk(ll1)
 	ld2 = distanceitk(ll2)
         # if one of the images has only 1 values ignore negative distances
@@ -278,11 +276,8 @@ def lineIndexPage(iarray0, iarray1):
             l1 = GetLine(itrim1, tx1, i)
             #ipdb.set_trace()
 	    cline, ind = alignLineIndex(l0, l1)
-	    #cline, ind = alignLineIndex(GetLine(itrim0, tx0, i), GetLine(itrim1, tx1, i))
-            #print ind
 	    vh_lines.append(cline)
 	    indices.append(ind)
-	    #cline, ind = alignLineIndex(GetLine(itrim0, tx0, i), GetLine(itrim1, tx1, i), halign=False)
 	    cline, ind = alignLineIndex(GetLine(itrim0, tx0, i), GetLine(itrim1, tx1, i), halign=False)
 	    v_lines.append(cline)
 	indices = np.array(indices)

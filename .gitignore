@@ -1,1 +1,6 @@
 *.pdf
+*.pyc
+OfficeITools.egg-info
+doctest
+docxtest
+odttest

@@ -2,10 +2,45 @@
 # configuration of tested application
 
 # No configuration necessary below this line, unless a new office suite is added
-# The application/conversion tools and paths (see below) shoud be set in environment
-# if not specified, the corresponding test will be ignored
 
-#site specific settings to be read from environment
+# In ordet to enable conversion on different systems (e.g.: Lo on Linux, MSO on Windows)
+# the application/conversion tools and paths (see below) shoud be set in environment
+# If not not specified on a gimen system, the corresponding test will be ignored
+
+# Example settings specified in .bashrc
+# On Linux:
+#export FTPATH="$HOME/sbox/git/office-interoperability-tools/"
+#export GOOGLEDOC_PK_FILE="$HOME/.ssh/e0cd31d3d0057333ca6eed556fd429152918d65c-privatekey.p12"
+#export GDCONVERT="$FTPATH/gdconvert/gdconvert"
+#export LO_BISECT_PATH="/mnt/data/milos/LO"
+#export LO50PROG="/opt/libreoffice5.0/program/soffice"
+#export LO51PROG="/opt/libreoffice5.1/program/soffice"
+#export LO52PROG="/opt/libreoffice5.2/program/soffice"
+#export LO44PROG="/opt/libreoffice4.4/program/soffice"
+#export LO43PROG="/opt/libreoffice4.3/program/soffice"
+#export LO42PROG="/opt/libreoffice4.2/program/soffice"
+#export LO41PROG="/opt/libreoffice4.1/program/soffice"
+#export LO40PROG="/opt/libreoffice4.0/program/soffice"
+#export LO36PROG="/opt/libreoffice3.6/program/soffice"
+#export LO35PROG="/opt/libreoffice3.5/program/soffice"
+#export LO33PROG="/opt/libreoffice3.3/program/soffice"
+#export MSWINEPROG="/usr/bin/wine"
+#export OO33PORT=8133
+#export OO33PROG="$FTPATH/DocumentConverter.py"
+#export OO33PATH="/opt/openoffice.org33/program"
+#export AO34PORT=8134
+#export AO34PROG="$FTPATH/DocumentConverter.py"
+#export AO34PATH="/opt/openoffice.org3/program"
+#export AO40PORT=8140
+#export AO40PROG="$FTPATH/DocumentConverter.py"
+#export AO40PATH="/opt/openoffice40/program"
+#export AO41PORT=8141
+#export AO41PROG="$FTPATH/DocumentConverter.py"
+#export AO41PATH="/opt/openoffice41/program"
+#export AWORDPROG="/usr/bin/abiword"
+# On Windows
+#export FTPATH=/cygdrive/e/sbox/DoCmp
+#export MS13PROG=$FTPATH/OfficeConvert/OfficeConvert.exe
 
 # start OOo or AOO server, in case we have it
 function startOOoServer()
@@ -151,6 +186,30 @@ then
 	printLO50() { $LO50PROG --headless --convert-to pdf $1 &> /dev/null; }
 fi
 
+if [ -x "$LO51PROG" ]
+then
+	canconvertLO51=1	# we can convert from source type to target types
+	canprintLO51=1		# we can print to pdf
+	#usage: convLO51 docx file.odf #converts the given file to docx
+	convLO51() { $LO51PROG --headless --convert-to $1 $2 &> /dev/null; }
+	sourceLO51() { echo "odt"; }
+	targetLO51() { echo "rtf docx doc"; }
+	#usage: printLO51 pdf file.rtf #prints the given file to pdf
+	printLO51() { $LO51PROG --headless --convert-to pdf $1 &> /dev/null; }
+fi
+
+if [ -x "$LO52PROG" ]
+then
+	canconvertLO52=1	# we can convert from source type to target types
+	canprintLO52=1		# we can print to pdf
+	#usage: convLO52 docx file.odf #converts the given file to docx
+	convLO52() { $LO52PROG --headless --convert-to $1 $2 &> /dev/null; }
+	sourceLO52() { echo "odt"; }
+	targetLO52() { echo "rtf docx doc"; }
+	#usage: printLO52 pdf file.rtf #prints the given file to pdf
+	printLO52() { $LO52PROG --headless --convert-to pdf $1 &> /dev/null; }
+fi
+
 # git master
 if [ -x "$LO4MPROG" ]
 then
@@ -268,69 +327,36 @@ then
 	printGD() { $GDCONVERT pdf $1; }
 fi
 
-#Calligra Words 2.7
-#export CW27PROG="/usr/bin/calligrawords"
-if [ -x "$CW27PROG" ]
+#Calligra Words
+#export CWORDSPROG="/usr/bin/calligrawords"
+#does not work
+if [ -x "$CWORDSPROG" ]
 then
-	canprintCW27=1		# we can print to pdf
-	canconvertCW27=0	# if we can convert from source type to target types
-	convCW27() { 0; }	# 
-	sourceCW27() { 0; }	#do not set, we do not use Calligra Words as source application (
-	targetCW27() { 0; }
-	printCW27() { $CW27PROG --export-pdf --export-filename=${1%.*}.pdf $1 2> /dev/null; }
+	canprintCWORDS=1		# we can print to pdf
+	canconvertCWORDS=1	# if we can convert from source type to target types
+	convCWORDS() { 0; }	# 
+	sourceCWORDS() { 0; }	#do not set, we do not use Calligra Words as source application (
+	targetCWORDS() { 0; }
+	targetCWORDS() { echo "odt"; }
+	printCWORDS() { $CWORDSPROG --export-pdf --export-filename=${1%.*}.pdf $1 2> /dev/null; }
 fi
 
-#Abiword 2.9
+#Abiword 
 #defined in .bashrc as
-#export AW29PROG="/usr/bin/abiword"
-if [ -x "$AW29PROG" ]
+#export AWORDPROG="/usr/bin/abiword"
+if [ -x "$AWORDPROG" ]
 then
-	canprintAW29=1		# we can print to pdf
-	canconvertAW29=0	# if we can convert from source type to target types
-	convAW29() { 0; }	# 
-	sourceAW29() { 0; }	#do not set, we do not use Abiword as source application (
-	targetAW29() { 0; }
-	printAW29() { $AW29PROG -t pdf $1; }
+	canprintAWORD=1		# we can print to pdf
+	canconvertAWORD=1	# if we can convert from source type to target types
+	convAWORD() { $AWORDPROG -t $1 $2 2> /dev/null; }
+	sourceAWORD() { 0; }	#do not set, we do not use Abiword as source application (
+	targetAWORD() { echo "rtf docx doc odt"; }
+	printAWORD() { $AWORDPROG -t pdf $1; }
 fi
 
 # libreoffice bisection git repositories
 #path to bibisection repositories defined in .bashrc as
 #export LO_BISECT_PATH="/mnt/data/milos/LO"
-function bibilo () {
-	if [ -x "$2" ] 
-	then
-		${1}PROG=$2
-		canconvert${1}=1	# we can convert from source type to target types
-		canprint${1}=1		# we can print to pdf
-		conv${1}() { ${1}PROG --headless --convert-to $1 $2 &> /dev/null; }
-		source${1}() { echo "odt"; }
-		target${1}() { echo "rtf docx doc"; }
-		print${1}() { ${1}PROG --headless --convert-to pdf $1 &> /dev/null; }
-	fi
-}
-
-# oldest/... and latest/... are oldest an latest version stored in the given repository
-if [ -d "$xLO_BISECT_PATH" ]
-then
-	bibilo BB43AO $LO_BISECT_PATH/bibisect-43all/oldest/program/soffice
-	bibilo BB42DO $LO_BISECT_PATH/lo-linux-dbgutil-daily-till42/oldest/program/soffice
-	bibilo BB43DO $LO_BISECT_PATH/lo-linux-dbgutil-daily-till43/oldest/program/soffice
-	bibilo BB44DO $LO_BISECT_PATH/lo-linux-dbgutil-daily-till44/oldest/program/soffice
-	bibilo BB50DO $LO_BISECT_PATH/lo-linux-dbgutil-daily-till50/oldest/program/soffice
-	bibilo BB51DO $LO_BISECT_PATH/lo-linux-dbgutil-daily-till51/oldest/program/soffice
-	bibilo BB52DO $LO_BISECT_PATH/lo-linux-dbgutil-daily-till52/oldest/program/soffice
-	bibilo BB53DO $LO_BISECT_PATH/lo-linux-dbgutil-daily/oldest/program/soffice
-
-	bibilo BB43AL $LO_BISECT_PATH/bibisect-43all/latest/program/soffice
-	bibilo BB42DL $LO_BISECT_PATH/lo-linux-dbgutil-daily-till42/latest/program/soffice
-	bibilo BB43DL $LO_BISECT_PATH/lo-linux-dbgutil-daily-till43/latest/program/soffice
-	bibilo BB44DL $LO_BISECT_PATH/lo-linux-dbgutil-daily-till44/latest/program/soffice
-	bibilo BB50DL $LO_BISECT_PATH/lo-linux-dbgutil-daily-till50/latest/program/soffice
-	bibilo BB51DL $LO_BISECT_PATH/lo-linux-dbgutil-daily-till51/latest/program/soffice
-	bibilo BB52DL $LO_BISECT_PATH/lo-linux-dbgutil-daily-till52/latest/program/soffice
-	bibilo BB53DL $LO_BISECT_PATH/lo-linux-dbgutil-daily/latest/program/soffice
-fi
-
 if [ -d "$LO_BISECT_PATH" ]
 then
 
