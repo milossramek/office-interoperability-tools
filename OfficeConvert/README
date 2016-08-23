@@ -1,0 +1,61 @@
+These files are necessary for command line based conversion by means of MS Office.
+
+Source code for the programs OfficeConvert.exe OfficeConvertWithReturnCode.cmd were obtained from 
+http://code.officeshots.org/trac/officeshots/browser/trunk/OfficeConvert?rev=361
+and is covered by the following license:
+
+Copyright (c) 2010, FishDawg LLC
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+* Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+* Neither the name of FishDawg LLC nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+The source was modified in order to support one additional file type -
+unfortunately the modified source version was lost :(
+
+These dlls were probably copied from the net, they are available at various
+places: 
+ExcelApi.dll
+NetOffice.dll
+OfficeApi.dll
+PowerPointApi.dll
+VBIDEApi.dll
+WordApi.dll
+
+Instalation and testing:
+
+Copy everything to some place in Windows. If using Wine to run MSOffice
+(tested with 2010),  copy them to .wineprefixes/msoffice2010/drive_c/windows/
+(or similar).
+
+Then, run:
+On Windows (using the Cygwin bash shell, byt maybe also using cmd):
+$ path_to/OfficeConvert.exe --list
+On Linux :
+wine .wineprefixes/msoffice2010/drive_c/windows/OfficeConvert.exe --list 2>/dev/null
+
+If you can see the following, everything is OK
+
+Office Convert 1.4
+Copyright (c) 2010 FishDawg LLC
+
+Word Formats:
+docx      Word 2007+ Document (docx)
+doc       Word 97-2003 Document (doc)
+pdf       PDF Document (pdf)
+xps       XPS Document (xps)
+mhtml     Web Archive (mht)
+html      Web Page (htm)
+fhtml     Web Page, Filtered (htm)
+rtf       Rich Text Format (rtf)
+txt       Plain Text (txt)
+xml       XML Document (xml)
+odt       OpenDocument Text (odt)
+msworks   Works 6 - 9 Document (wps)
+
+(and more)
+
+Tested with MSOffice 2007, 2010 and 2013 on Windows 7 and MSOffice 2010 on Linux using wine-1.8
