@@ -16,8 +16,8 @@ setup(
 	install_requires=[
 		'tifffile>=0.4',
 		'Pillow>=2.6.1',
-		'SimpleITK>=0.8.0',
-		#'numpy>=1.6.1',
+		'numpy>=1.6.1',
+		'scipy>=0.17',
 		#'distribute>=0.6.28',
 		'odfpy>=0.9.6',
 		#'ipdb>=0.7'

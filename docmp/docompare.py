@@ -15,18 +15,17 @@ import ipdb
 from idisp import disp
 #ipdb.set_trace()
 from tifffile import TIFFfile
-import SimpleITK as sitk
+from scipy import ndimage
 
 class DoException(Exception):
 	def __init__(self, what):
 		self.what = what
 
-def distanceitk(image):
+def distancetransf(image):
 	if image.dtype=='bool':
-		itkImage = sitk.GetImageFromArray(image.astype(np.int8))
+		return ndimage.distance_transform_edt(1-image.astype(np.int8))
         else:
-	    itkImage = sitk.GetImageFromArray(image)
-	return sitk.GetArrayFromImage(sitk.SignedDanielssonDistanceMap(itkImage))
+		return ndimage.distance_transform_edt(1-image)
 
 def tmpname():
 	f = tempfile.NamedTemporaryFile(delete=True)
@@ -230,17 +229,19 @@ def alignLineIndex(l1, l2, halign=True):
 		    ovlaps[i] = 1.0 - float(np.sum(diff)) / (np.sum(ll2) + np.sum(ll1))
 
 	bf = ovlaps.argmax(); # best fit position
-        ll1=l2  # keep the missing lines equal to l2, may help in table borders 
-        ll1[bf:bf+l1.shape[0],:] = l1 
-        #crop l2 to the size of l1 at the best fit position
-        ll2=l2
-        if l1.shape[0] > l2.shape[0]:
-		overlayedLines = ovlLine(ll2, ll1)
-	else:
-		overlayedLines = ovlLine(ll1, ll2)
+        if l2.shape[0] > l1.shape[0]:
+            ll1=l2  # keep the missing lines equal to l2, may help in table borders 
+            ll1[bf:bf+l1.shape[0],:] = l1 
+            #crop l2 to the size of l1 at the best fit position
+            ll2=l2
+        else:
+            ll1=l1
+            ll2=l2
+	overlayedLines = ovlLine(ll1, ll2)
 
-	ld1 = distanceitk(ll1)
-	ld2 = distanceitk(ll2)
+	ld1 = distancetransf(ll1)
+	ld2 = distancetransf(ll2)
+        #ipdb.set_trace()
         # if one of the images has only 1 values ignore negative distances
         if ll1.all() or ll2.all():
             ld1[np.where(ld1<0)]=0

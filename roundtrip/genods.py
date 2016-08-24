@@ -1,7 +1,5 @@
 #! /usr/bin/python
 #
-# doeval.py v1.0 - 2013-09-30
-#
 # This script generates a report from alist of csv files with numeric evaluations and from printed document files
 #
 # Copyright (C) 2013 Milos Sramek <milos.sramek@soit.sk>
