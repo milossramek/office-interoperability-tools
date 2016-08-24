@@ -1,5 +1,5 @@
 #!/bin/bash
-set -o xtrace #be verbose
+#set -o xtrace #be verbose
 
 # To use:
 
