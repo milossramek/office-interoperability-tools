@@ -12,7 +12,7 @@ setup(
 	license = "GPLv3",
 	#data_files = data_files,
 	packages = find_packages(),
-	scripts = ['docompare.py','doeval.py', 'dolib.py', 'dogenall.sh','doviews.sh', 'gdconvert.py', 'msoconvert.sh', 'dogood.sh'],
+	scripts = ['docompare.py', 'gdconvert.py', 'msoconvert.sh', 'dogood.sh'],
 	install_requires=[
 		'tifffile>=0.4',
 		'Pillow>=2.6.1',
