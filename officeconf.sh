@@ -26,16 +26,16 @@
 #export LO33PROG="/opt/libreoffice3.3/program/soffice"
 #export WINEPROG="/usr/bin/wine"
 #export OO33PORT=8133
-#export OO33PROG="$FTPATH/DocumentConverter.py"
+#export OO33PROG="$FTPATH/scripts/DocumentConverter.py"
 #export OO33PATH="/opt/openoffice.org33/program"
 #export AO34PORT=8134
-#export AO34PROG="$FTPATH/DocumentConverter.py"
+#export AO34PROG="$FTPATH/scripts/DocumentConverter.py"
 #export AO34PATH="/opt/openoffice.org3/program"
 #export AO40PORT=8140
-#export AO40PROG="$FTPATH/DocumentConverter.py"
+#export AO40PROG="$FTPATH/scripts/DocumentConverter.py"
 #export AO40PATH="/opt/openoffice40/program"
 #export AO41PORT=8141
-#export AO41PROG="$FTPATH/DocumentConverter.py"
+#export AO41PROG="$FTPATH/scripts/DocumentConverter.py"
 #export AO41PATH="/opt/openoffice41/program"
 #export AWORDPROG="/usr/bin/abiword"
 # On Windows
