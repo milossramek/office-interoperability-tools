@@ -15,7 +15,10 @@ try:
     import ipdb
 except ImportError:
     pass
-from tifffile import TIFFfile
+#if tifffile.__version__ == '2015.08.17' (installed on Ubuntu using apt)
+#from tifffile import TIFFfile  
+#if tifffile.__version__ == '0.9.2' (installed on Ubuntu using pip)
+from tifffile import TiffFile
 from scipy import ndimage
 
 class DoException(Exception):
@@ -104,7 +107,7 @@ def pdf2array(pdffile, res=300):
 	cmd = 'cat %s 2>/dev/null | gs -dQUIET -dNOPAUSE -sDEVICE=tiff24nc -r%d -sOutputFile=%s - 2>/dev/null'%(pdffile, res, tname)
 	os.system(cmd)
 	if not os.path.exists(tname): return None, None
-        imgfile = TIFFfile(tname)
+        imgfile = TiffFile(tname)
         pages = [p.asarray() for p in imgfile.pages[:3]]    # first three pages only
 
         shapes = [p.shape for p in imgfile.pages[:3]]
