@@ -110,7 +110,7 @@ then
 			MS07)	msapp=$MS07PROG;;
 			MS10)	msapp=$MS10PROG;;
 			MS13)	msapp=$MS13PROG;;
-			MSWINE)	msapp="$MSWINEPROG OfficeConvert" ;;
+			MSWINE)	msapp="$WINEPROG OfficeConvert" ;;
 		esac
 		$msapp --format=$oformat --output=$ofile $ifile &>/dev/null
 	elif [ $apptype == "GD" ]

@@ -24,7 +24,7 @@
 #export LO36PROG="/opt/libreoffice3.6/program/soffice"
 #export LO35PROG="/opt/libreoffice3.5/program/soffice"
 #export LO33PROG="/opt/libreoffice3.3/program/soffice"
-#export MSWINEPROG="/usr/bin/wine"
+#export WINEPROG="/usr/bin/wine"
 #export OO33PORT=8133
 #export OO33PROG="$FTPATH/DocumentConverter.py"
 #export OO33PATH="/opt/openoffice.org33/program"
@@ -292,16 +292,16 @@ fi
 
 #Microsoft Office on Linux using Wine
 #defined in .bashrc as
-#export MSWINEPROG="/usr/bin/wine"
+#export WINEPROG="/usr/bin/wine"
 #requires the OfficeConvert.exe and its dlls in ./msoffice2010/drive_c/windows/
-if [ -x "$MSWINEPROG" ]
+if [ -x "$WINEPROG" ]
 then
 	canconvertMSWINE=1	# we can convert from source type to target types
 	canprintMSWINE=1		# we can print to pdf
-	convMSWINE() { $MSWINEPROG OfficeConvert --format=$1 $2; }
+	convMSWINE() { $WINEPROG OfficeConvert --format=$1 $2; }
 	sourceMSWINE() { echo "docx"; }
 	targetMSWINE() { echo "rtf odt doc"; }
-	printMSWINE() { $MSWINEPROG OfficeConvert --format=pdf $1; }
+	printMSWINE() { $WINEPROG OfficeConvert --format=pdf $1; }
 fi
 
 #Microsoft Office 2013

@@ -11,15 +11,35 @@
 import numpy as np
 import cv2, Image
 import sys, getopt, os, tempfile
-import ipdb
-from idisp import disp
-#ipdb.set_trace()
+try:
+    import ipdb
+except ImportError:
+    pass
 from tifffile import TIFFfile
 from scipy import ndimage
 
 class DoException(Exception):
 	def __init__(self, what):
 		self.what = what
+
+def disp(iimg, label = "", gray=False):
+    """ Display an image using pylab
+    """
+    try:
+        import pylab
+        dimage = iimg.copy()
+        if iimg.ndim==3:
+            dimage[...,0] = iimg[...,2]
+            dimage[...,2] = iimg[...,0]
+
+        pylab.imshow(dimage, interpolation='none')
+        if gray: pylab.gray()
+        #pylab.gca().format_coord = format_coord
+        pylab.text(1500, -30, label)
+        pylab.axis('off')
+        pylab.show()
+    except ImportError:
+        print "Module pylab not available"
 
 def distancetransf(image):
 	if image.dtype=='bool':
@@ -138,16 +158,13 @@ def mergeLocation(tx0, sp0, tx1, sp1):
     find merge location in (tx0,sp0)
     """
     if len(tx0) < 2: 
-        #ipdb.set_trace()
         return 9999
     txmin=min( np.array(tx0)[:,1] ) # minimal line heigh, used as detection threshold
     txx=[]
-    #ipdb.set_trace()
     for i in range(min(len(tx0)-1,len(tx1))):
         tx=tx0[i][1] + sp0[i][1] + tx0[i+1][1]
         txx.append(tx - tx1[i][1])
     cc = np.argmin(txx)
-    #ipdb.set_trace()
     if txx[cc] < txmin/3: #expected to be near 0
         return cc
     else:
@@ -158,7 +175,6 @@ def mergeBlobs(tx0, sp0, tx1, sp1):
     ml0 = mergeLocation(tx0, sp0, tx1, sp1) 
     ml1 = mergeLocation(tx1, sp1, tx0, sp0)
     while ml0 < len(tx0) or ml1 < len(tx1):
-        #ipdb.set_trace()
         if ml0 < ml1:
             tx0, sp0 = mergeSingle(ml0, tx0, sp0, tx1, sp1)
         else:
@@ -188,7 +204,6 @@ def alignLineIndex(l1, l2, halign=True):
 	"""
 	# align in the horizontal direction first
 	# estimate horizontal position error by correletion
-        #ipdb.set_trace()
 	cw = min(l2.shape[1],l1.shape[1])
 	l1 = l1[:,:cw]
 	l2 = l2[:,:cw]
@@ -208,7 +223,6 @@ def alignLineIndex(l1, l2, halign=True):
 	elif horizPosErr < 0:
 		l2c[:,:horizPosErr] = l2[:,-horizPosErr:]
 		l2 = l2c
-		#ipdb.set_trace()
 
 	# find position with best alignment in the vertical direction
 	#swap so that l2 is the one with more lines
@@ -241,7 +255,6 @@ def alignLineIndex(l1, l2, halign=True):
 
 	ld1 = distancetransf(ll1)
 	ld2 = distancetransf(ll2)
-        #ipdb.set_trace()
         # if one of the images has only 1 values ignore negative distances
         if ll1.all() or ll2.all():
             ld1[np.where(ld1<0)]=0
@@ -263,10 +276,8 @@ def lineIndexPage(iarray0, iarray1):
 	itrim1 = iarray1[ystart1:ystop1, xstart1:xstop1].astype(np.uint8)
 	tx1, sp1 = GetLineSegments(itrim1)
 
-        #ipdb.set_trace()
         # detect merged lines in one set and merge them in the other
         tx0, sp0, tx1, sp1 = mergeBlobs(tx0, sp0, tx1, sp1)
-        #ipdb.set_trace()
 
         # create arrays with aligned lines
 	vh_lines=[] # horizontally aligned lines
@@ -275,14 +286,12 @@ def lineIndexPage(iarray0, iarray1):
 	for i in range(min(len(tx0),len(tx1))):
 	    l0= GetLine(itrim0, tx0, i)
             l1 = GetLine(itrim1, tx1, i)
-            #ipdb.set_trace()
 	    cline, ind = alignLineIndex(l0, l1)
 	    vh_lines.append(cline)
 	    indices.append(ind)
 	    cline, ind = alignLineIndex(GetLine(itrim0, tx0, i), GetLine(itrim1, tx1, i), halign=False)
 	    v_lines.append(cline)
 	indices = np.array(indices)
-        #ipdb.set_trace()
 
 	#create a page view to display vertically and horizontally adjusted overlays, taking line spaces from the source (first) page
         # height of the output page: sum of overlayed blobs + sum of spaces from image 1
@@ -318,7 +327,6 @@ def lineIndexPage(iarray0, iarray1):
                 else:
 		    ar += v_lines[i].shape[0]
 
-        #ipdb.set_trace()
 	#height error in pixels
 	heightErr=abs(float(itrim0.shape[0]-itrim1.shape[0]))
 	#normalized height error in pixels
@@ -465,7 +473,6 @@ def valToGrade(data):
     HLPEMax = (0.01,5,10,15,20)        # 
     THEMax = (0.01,2, 4, 6,8)
     LNDMax = (0.01,0.01,0.01,0.01,0.01)
-    #ipdb.set_trace()#
     FDEVal=5
     for i in range(len(FDEMax)):
         if FDEMax[i] >float(data[0]):
@@ -490,7 +497,7 @@ def valToGrade(data):
     return max((FDEVal, HLPEVal, THEVal, LNDVal))
 
 def usage(desc):
-	global outfile, binthr, goodThr
+	global outfile, binthr, badThr
 	print sys.argv[0]+':',  desc
 	print "Usage: ", sys.argv[0], "[options]", "source.pdf target.pdf"
 	print "\t-o ................ file to store output view to {default:"+outfile+'}'
@@ -504,14 +511,14 @@ def usage(desc):
 	print "\t-z ................ page overlay with vertical and horizontal line alignment {default: all}"
 	print "\t-t ................ binarization threshold {default: %d}"%binthr
 	print "\t-b ................ run within the git bisect process (names of the output files will be modified) {default: normal}"
-	print "\t-g int ............ good threshold used in bisecting to distinguish good/bad (1-5) {default: %d}"%goodThr
+	print "\t-g int ............ threshold used in bisecting to distinguish good/bad (1-5) {default: %d}"%badThr
 	print "\t--source-id string  additional info to be printed in rendered pdf {default: none}"
 	print "\t--target-id string  additional info to be printed in rendered pdf {default: none}"
 	print "\t-v ................ be verbose"
 	print "\t-h ................ this usage"
 
 def parsecmd(desc):
-	global verbose, dpi, Names, annotated, overlayStyle, outfile, binthr, bisecting, goodThr, sourceid, targetid
+	global verbose, dpi, Names, annotated, overlayStyle, outfile, binthr, bisecting, badThr, sourceid, targetid
 	try:
             opts, Names = getopt.getopt(sys.argv[1:], "hvalpszbg:o:d:t:", ["help", "verbose", "source-id=", "target-id="])
 	except getopt.GetoptError as err:
@@ -538,7 +545,7 @@ def parsecmd(desc):
 		elif o in ("-z"):
 			overlayStyle = 'z'  #page overlay, vertical and horizontal line alignment
 		elif o in ("-g"):
-			goodThr = int(a)
+			badThr = int(a)
 		elif o in ("-o"):
 			outfile = a
 		elif o in ("-d"):
@@ -559,7 +566,7 @@ a4height=297
 i2mm=25.4	# inch to mm conversion
 annotated = False
 bisecting = False
-goodThr = 3
+badThr = 3
 overlayStyle = 'a'  #output all versions by default
 progdesc="Compare two pdf documents and return some statistics"
 verbose = False
@@ -609,7 +616,6 @@ def mainfunc():
         #!!!shapes = [(min(a[0],b[0]),min(a[1],b[1])) for a,b in zip(shapes1, shapes2)] 
         # create single image for each
         npages = min(len(pages1), len(pages2))
-        #ipdb.set_trace()
         img1 = makeSingle(pages1, shapes1)
         img2 = makeSingle(pages2, shapes2)
 
@@ -651,7 +657,7 @@ def mainfunc():
 	grade = valToGrade((lineOvlDistRslt, lineOvlHPosRslt, pageHeightRslt, pageLinesRslt))
 
         if bisecting:
-            if grade <= goodThr:
+            if grade < badThr:
                 outfile = outfile+"-good"
             else:
                 outfile = outfile+"-bad"
@@ -661,7 +667,6 @@ def mainfunc():
 	rsltText = plainOvlRslt + le1 + le2 + le3 + le4
         # command to write statistics to the pdf file, to be used in report creation
 
-        #ipdb.set_trace()
         #options: s, p, l z
 	if overlayStyle == 'p' or overlayStyle == 'a':
             saveRslt('p',  'Page overlay, no alignment', bimg1, bimg2, Names[0], Names[1], plainOvlRslt+le3, rsltText, outfile)
@@ -677,7 +682,7 @@ def mainfunc():
             saveRslt('s', '', img1, img2, Names[0], Names[1], le1, rsltText, outfile)
 
         # set exit status
-        if grade <= goodThr:
+        if grade < badThr:
             sys.exit(0)
         else:
             sys.exit(1)
