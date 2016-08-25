@@ -1,9 +1,0 @@
-Examples and results of interoperability tests:
-doctest.tgz: DOC files,  tested ApacheOO4.1, AbiWord, OpenOffice3.3 and LibreOffice5.2  with respect to MS2010 (running on Linux using Wine)
-docxtest.tgz: DOCX files, tested Google Docs and LibreOffice 4.0 - 5.2  with respect to MSOffice 2010 (running on Linux using Wine)
-odttest.tgz: ODT files, tested ApacheOO4.1, AbiWord, Google Docs, LO 4.0. MSOffice 2013 and  OpenOffice3.3 with respect to LibreOffice5.0
-
-To view the results:
-unpack and then display the rslt-web.ods file (the ">" characters is a link to the rendered file)
-To repeat the test: 
-follow the instructions in the config.sh file. The corresponding applications should be installed and configured in the officeconfig.sh file 

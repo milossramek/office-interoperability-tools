@@ -1,0 +1,97 @@
+Required steps to automatically bibisect LibreOffice - MS Office
+interoperability errors
+
+-----
+Setup
+-----
+
+1. clone the LO bibisection repository to some folder, say 'LOBisect':
+git clone git://dev-downloads.libreoffice.org/lo-linux-dbgutil-daily.git
+git clone git://dev-downloads.libreoffice.org/lo-linux-dbgutil-daily-till42.git
+git clone git://dev-downloads.libreoffice.org/lo-linux-dbgutil-daily-till43.git
+git clone git://dev-downloads.libreoffice.org/lo-linux-dbgutil-daily-till44.git
+git clone git://dev-downloads.libreoffice.org/lo-linux-dbgutil-daily-till50.git
+git clone git://dev-downloads.libreoffice.org/lo-linux-dbgutil-daily-till51.git
+git clone git://dev-downloads.libreoffice.org/lo-linux-dbgutil-daily-till52.git
+
+2. Download and unpack http://people.canonical.com/~bjoern/bibisect/bibisect-43all.tar.xz
+
+These will take up to 40 GB of space
+Read more: https://wiki.documentfoundation.org/QA/Bibisect/Linux#dbgutil
+
+3. Enter the LOBisect folder and unpack the LOBisect.tgz file there. To each
+repository it will copy file gitversions.sh with tags of the oldest and latest
+revision of the repository and some docx, doc and rtf files for texting (in files subfolders).
+
+4. Copy files bibicheckout.sh and bibirun.sh from the scripts folder to LOBisect.
+
+5. Enter all repository folders and run there ../bibicheckout.sh. Oldest
+and latest revisions will be checked out to folders 'oldest' and 'latest'.
+These will be needed to check if there is a regression or progression in the
+given folder and also by tests in the roundtrip/bibisecttest folder
+
+-----------
+Bibisection
+-----------
+
+1. copy the file to be tested (docx, doc or rtf) to the folder of the right repository and run
+../bibirun.sh -i file.docx
+One may run the bibirun script also with a test file anywhere:
+../bibirun.sh -i path_to/file.docx
+but always in the folder of the right repository.
+
+In some of the folders there is document for testing in the 'files' subfolder, 
+
+2. The script decides itself if regression or progression will be searched for
+or if bisection need to be run at all.
+
+3. On success, the folder, where the test file was placed, will contain some
+generated files: 
+
+Views of the last bad test:
+File_1599.print-bad-l.pdf
+File_1599.print-bad-p.pdf
+File_1599.print-bad-s.pdf
+File_1599.print-bad-z.pdf
+
+Views of the last good test:
+File_1599.print-good-l.pdf
+File_1599.print-good-p.pdf
+File_1599.print-good-s.pdf
+File_1599.print-good-z.pdf
+
+Details about the bisection result can be found in file File_1599.docx.print.bisectlog, or
+can be retrieved using git as usual.
+
+
+----------------------------
+Finding the right repository
+----------------------------
+
+1. Add to .bashrc:
+export LO_BISECT_PATH="$Home/LOBisect"
+
+2. Unpack file bibisecttest.tgz in the roundtrip folder
+3. Copy the file to be bibisected to the bibisecttest/orig folder
+4. Run scripts according to instructions in the config.sh files
+5. You can find the right repository in the report rslt.ods. 
+
+Asignment of the short application names to repositories in the LOBisect directory:
+
+BB43AOPROG: bibisect-43all
+BB43ALPROG: bibisect-43all
+BB42DOPROG: lo-linux-dbgutil-daily-till42
+BB42DLPROG: lo-linux-dbgutil-daily-till42
+BB43DOPROG: lo-linux-dbgutil-daily-till43
+BB43DLPROG: lo-linux-dbgutil-daily-till43
+BB44DOPROG: lo-linux-dbgutil-daily-till44
+BB44DLPROG: lo-linux-dbgutil-daily-till44
+BB50DOPROG: lo-linux-dbgutil-daily-till50
+BB50DLPROG: lo-linux-dbgutil-daily-till50
+BB51DOPROG: lo-linux-dbgutil-daily-till51
+BB51DLPROG: lo-linux-dbgutil-daily-till51
+BB52DOPROG: lo-linux-dbgutil-daily-till52
+BB52DLPROG: lo-linux-dbgutil-daily-till52
+BB53DOPROG: lo-linux-dbgutil-daily
+BB53DLPROG: lo-linux-dbgutil-daily
+
