@@ -1,58 +1,73 @@
-The DoCmp tools are aimed at assessment of interoperability of various office applications using different office document formats.
+The goal of the office-interoperability-tools package is assessment of interoperability of various office applications using different office document formats.
  
-The package has two software parts: 
-1. Conversion and printing of test documents. For this, one needs the bash shell and the Office program to be used in testing - the rest is included in the package. 
-   Conversion and printing was tested on Linux and Windows
+The package has three parts: 
+1. Batch conversion and printing of test documents. For this, one needs the bash shell and an office program to be 
+used in testing - the rest is included in the package. The office program must provide a command line interface. 
+Conversion and printing was tested on Linux and Windows
 
 2. Evaluation and reporting. For this one needs the bash shell, Python with some installed modules. This was tested on Linux.
 
+3. Automated bisection of interoperability errors using the LibreOffice bibisection repositories. Tested on Linux using MSOffice 2010 runnig in Wine.
+
 -------------------------
-INSTALLATION (both parts)
+INSTALLATION
 -------------------------
 
-Download the docmp package and unpack it somewhere in the file system. 
+Download the package and unpack it somewhere in the file system, or clone it directly from git.
+Assume that name of this folder is OIT
 
+--------
 On Linux 
 --------
-Set environment variables which define applications to be tested on the current system by adding the following lines to the $HOME/.bashrc file and modify them according to the actual situation. Comment out unwanted options or add new ones:
------
+Set environment variables which define applications to be tested on the current system by adding the following lines to the $HOME/.bashrc file.  Modify them according to the actual situation. Comment out unwanted options or add new ones:
+
 # use full paths
-export FTPATH="$HOME/Dokumenty/LO-bugs/FormatyTest/"
-
-# To use Google Docs, get your own key to acces the API
-#export GOOGLEDOC_PK_FILE="$HOME/.ssh/e0cd31d3d0057333ca6eed556fd429152918d65c-privatekey.p12"
-#export GDCONVERT="$FTPATH/gdconvert/gdconvert"
-
+export FTPATH="$HOME/OIT"
+# to used Google Docs, you need your own key
+export GOOGLEDOC_PK_FILE="$HOME/.ssh/e0cd31d3d0057333ca6eed556fd429152918d65c-privatekey.p12"
+export GDCONVERT="$FTPATH/gdconvert/gdconvert"
+export LO52PROG="/opt/libreoffice5.2/program/soffice"
+export LO51PROG="/opt/libreoffice5.1/program/soffice"
+export LO50PROG="/opt/libreoffice5.0/program/soffice"
+export LO44PROG="/opt/libreoffice4.4/program/soffice"
+export LO43PROG="/opt/libreoffice4.3/program/soffice"
+export LO42PROG="/opt/libreoffice4.2/program/soffice"
 export LO41PROG="/opt/libreoffice4.1/program/soffice"
-
 export LO40PROG="/opt/libreoffice4.0/program/soffice"
+export LO36PROG="/opt/libreoffice3.6/program/soffice"
+export LO35PROG="/opt/libreoffice3.5/program/soffice"
+export LO33PROG="/opt/libreoffice3.3/program/soffice"
+export WINEPROG="/usr/bin/wine"
 
+#these are specific settings for OO/AO, which should be run in a server mode
+export OO33PORT=8133
+export OO33PROG="$FTPATH/DocumentConverter.py"
+export OO33PATH="/opt/openoffice.org33/program"
 export AO34PORT=8134
 export AO34PROG="$FTPATH/DocumentConverter.py"
 export AO34PATH="/opt/openoffice.org3/program"
-
 export AO40PORT=8140
 export AO40PROG="$FTPATH/DocumentConverter.py"
-export AO40PATH="/opt/openoffice4/program"
+export AO40PATH="/opt/openoffice40/program"
+export AO41PORT=8141
+export AO41PROG="$FTPATH/DocumentConverter.py"
+export AO41PATH="/opt/openoffice41/program"
 
-export AW29PROG="/usr/bin/abiword"
 
-export CW27PROG="/usr/bin/calligrawords"
+export AWORDPROG="/usr/bin/abiword"
+export CWORDSPROG="/usr/bin/calligrawords"
 
-# these are not required, but may be handy
-function lo40 () { $LO40PROG  $* & }
-function lo41 () { $LO41PROG  $* & }
-function ao34 () { $AO34PATH/soffice  $* & }
-function ao40 () { $AO40PATH/soffice  $* & }
------
+# required only for bisection of LO interoperability buds 
+export LO_BISECT_PATH="$HOME/LOBisect"
 
+----------
 On Windows:
 ----------
 Install bash from the CygWin package. 
 Include the following (or similar) to the .bashrc file:
 
-export FTPATH=/cygdrive/e/LO-bugs/FormatyTest
-export MS10PROG=$FTPATH/OfficeConvert/OfficeConvert.exe
+export FTPATH=/cygdrive/e/OIT
+export MS13PROG=$FTPATH/OfficeConvert/OfficeConvert.exe
 
 Replace MS10 by MS07 or MS13 or anything else.
 You can use only one MSOffice program on one system.
@@ -60,101 +75,78 @@ The OfficeConvert.exe program was taken from http://code.officeshots.org/trac/of
 
 AOO and LO were not tested on Windows. Configuration would be perhaps the same as that listed above.
 
-Comment: If an application can directly print and convert files from a command line, it is listed there directly (LO41PROG), if not, a helper applicatin is listed (AO34PROG, MS10PROG)
+Comment: If an application can directly print and convert files from a command line, it is listed there directly (LO41PROG), if not, a helper application is listed (AO34PROG, MS13PROG)
 
-Comment: In the tested setup, Windows was installed in a virtual machine with access to the Linux file system. Thus only one instance of software and test files existed, with different configuration files in each system. This saved a lot of work and mess caused by eventual copying of files.
+Comment: In the tested setup, Windows was installed in a virtual machine with access to the Linux file system. 
+Thus, only one instance of software and test files existed, with different configuration files in each system. 
+This saved a lot of work and mess caused by eventual copying of files.
 
-Evaluation and reporting tools)
-------------------------------
-Only on Linux (nstruction for Ubuntu, Mint and similar):
+----------------------------------
+Evaluation and creation of reports
+----------------------------------
+Runs only on Linux (instructions for Ubuntu, Mint and similar):
 
 1. install the required tools by
-sudo apt-get install python-pip python-setuptools python-numpy python-opencv python-ipdb python-tiffile python-sitk libpython2.7-dev libjpeg-dev libjpeg-dev libz-dev libtiff5-dev libfreetype6-dev exiftool
-2.  Enter docmp/docmp and run
+sudo apt-get install python-pip python-setuptools python-numpy python-scipy python-opencv python-ipdb libpython2.7-dev libjpeg-dev libjpeg-dev libz-dev libtiff5-dev libfreetype6-dev exiftool (maybe some others). Do not install python-tiffile 
+2.  Enter OIT/docmp and run
 sudo python setup.py develop
 This will install a few additional python packages 
 
 -----
 SETUP
 -----
-Properties of various office application are defined in the officeconf.sh file.
+Properties of various office applications are defined in the officeconf.sh file.
 Modification is needed only if you add a new application.
 
-Two test types are possible:
-1. Test all combinations between the specified applications (the combitest directory, currently - march 2015 - not maintained )
-2. Perform roundtrip tests with respect to one selected application (the roundtrip directory)
+-------
+Testing
+-------
 
-The tests require a special directory structure, see the 'config.sh' script in each of them, for example roundtrip/docxtest/config.sh
-This file also lists commands and machines, where they should be issued.
+The tests require a special folder structure, see the 'config.sh' script in the archives in folder 'roundtrip'
 
 To create a new test:
-1. create a subdirectory in roundtrip or combitest
-2. copy config.sh from another subdirectory of the same tree
+1. create a a new subfolder in the roundtrip folder
+2. copy config.sh from another subfolder
 3. add test files
 
----------------
-Roundtrip tests
----------------
-read comments in roundtrip/docxtest/config.sh
-For each test file and LO (AO, GD,...) versions there are two tests:
-roundtrip: open by LO, save by LO, open by MS2013 and export as pdf
-print: open by LO and export as pdf
+A set of applications (rtripapps in config.sh) can be tested at once in respect to one source application 
+(sourceapp in config.sh)
 
+Names of the applications are specified in officeconf.sh
 
------------------------
-CONVERSION AND PRINTING
------------------------
-read comments in roundtrip/docxtest/config.sh
+Instructions how to run the necessary scripts can be found in comments of the config.sh files.
+The convall.sh script will run the 'rtripapps' applications, the printall.sh scrip will run the 'sourceapp' application.
+Both should be run on the corresponding system, the  convall.sh maybe on both (depending which applications are tested); 
 
------------------------------
------------------------------
------------------------------
------------------------------
------------------------------
-probably invalid text follows, related to combitest
------------------------------
-If an application should provide 'source' files, it requires its own subdirectory for each test case. A source document should be placed here in the 'native' format of the application. For example:
-testfiles/bullets/LO41/bullets-LO41.odt
-testfiles/bullets/MS13/bullets-MS13.docx
-Applications, which only 'print' documents, do not require their own subdirectory, as for example abiword.
-The source documents for different application need not ne exactly the same, as they are never compared.
+WARNING: During conversion and printing no other instance of LO and AOO can run
 
-The configuration file config.sh lists all test cases, tested format and tested applications. See testfiles/config.sh
+The remaining scripts should by run on Linux.
 
-CONVERSION AND PRINTING
------------------------
+-------
+Results
+-------
 
-WARNING: During conversion and printing no other instance of LO and AOO can run!!!
+The genods.py script creates a report spreadsheet in an ods file with two sheets, one for print tests and roundtrip tests. 
+Each file and each application is graded by four grades in the range 0 (pixel identical result) to 5 (very different), 
+6 (created pdf was empty) and 7 (conversion failed).
+The grades are color coded (green-red scale), if all grades are below 3, they are in blue.
+Meaning of grades can be found in column headers.
 
-The source documents are fist converted to the tested formats and subsequently printed to pdfs. These are then compared. 
+The print test: Input file is printed by the tested application (LO) to pdf, which is subsequently compared to pdf printed by the source application (MSO).
 
-If using only one system (eventually with several office applications), conversion and printing can be done by running the dogenall.sh script (without arguments). If using two or more systems (Linux with AO, LO, abiword etc) and Windows1 (MSO10), Windows2 (MS13), then conversion and printing should be run separately:
-On Linux run 'dogenall.sh -c' in the 'testfiles' directory 
-On Windows1 run  dogenall.sh -c 
-On Windows2 run  dogenall.sh (conversion and printing) 
-On Windows1 run  dogenall.sh -p (printing only) 
-On Linux run  dogenall.sh -p 
+The roundtrip test: Input file is loaded by the tested application (LO) and stored in the same format. 
+This file is then opened by the source application (MSO) and printed to pdf.  These two pdfs are compared.
 
-After this step, in each subdirectory one can find converted and printed files, for example:
-testfiles/bullets/LO40/bullets-LO40.docx (converted)
-testfiles/bullets/LO40/bullets-LO40.docx.LO41.pdf (printed file testfiles/bullets/LO40/bullets-LO40.docx by LO41 to pdf)
+Four different views are generated for each test:
+- side-by-side view (files xxx-s.pdf)
+- page overlay with no alignment (files xxx-p.pdf)
+- page overlay with verically alignned lines (files xxx-l.pdf)
+- page overlay with verically and horizontally alignned lines (files xxx-z.pdf)
 
-GENERATING VIEWS
-The doviews.sh script generates pair views (pdf file) with statistics (csv file) from the pdf files using information in the config.sh file. Three view types are generated:
-doviews.sh -l : page overlays
-doviews.sh -g : page overlays with aligned lines
-Without the  -l or -g swith the program creates side-by-side views (-a: no annotation, -r: order not randomized)
+One can open these files directly from the spreadsheed by clicking on cells with the ">" character.  
+ 
+-------------------
+Automated bisection
+-------------------
 
-The -c -f -s switches override settings from config.sh. Individual pairs are saved in the 'pdfpair' directory, one can reuse them using the -u switch. The -p switch enforces splitting the csv and pdf output to one file per test case.
-
-GENERATING  A REPORT
-The doeval.py script generates a textual report from the csv file and the printed pdfs:
-doeval csv_files
-It is recommended to run the doviews.sh scrip using the -p switch, so that one csv file is generated for each test case. Then the report will be nicely separated in sections.
-
-MINIMAL SET OF COMMANDS
-Using one system and assuming that everything is properly configured and prepared, the following three commands should be run in the directory with the config.sh file and subdirectories with the source files to generate the report:
-dogenall.sh
-doviews.sh [-l |-q] -p (Several all*.pdf and all*csv files are written)
-doeval [-c] [-l] all*csv (rslt.odt is written)
-
+Instructions can be found in the bibisecting/README file
