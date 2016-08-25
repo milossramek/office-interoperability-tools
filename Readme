@@ -88,7 +88,7 @@ Runs only on Linux (instructions for Ubuntu, Mint and similar):
 
 1. install the required tools by
 sudo apt-get install python-pip python-setuptools python-numpy python-scipy python-opencv python-ipdb libpython2.7-dev libjpeg-dev libjpeg-dev libz-dev libtiff5-dev libfreetype6-dev exiftool (maybe some others). Do not install python-tiffile 
-2.  Enter OIT/docmp and run
+2.  Enter OIT/scripts and run
 sudo python setup.py develop
 This will install a few additional python packages 
 
