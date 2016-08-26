@@ -191,7 +191,7 @@ def getRsltTable(testType):
     # Start the table, and describe the columns
     table = Table(name=testType)
     table.addElement(TableColumn(numbercolumnsrepeated=1,stylename=nameColStyle))
-    table.addElement(TableColumn(numbercolumnsrepeated=3,stylename=rankColStyle))
+    table.addElement(TableColumn(numbercolumnsrepeated=4,stylename=rankColStyle))
     for i in targetAppsSel:
         for i in range(len(testLabels)-1):
             table.addElement(TableColumn(stylename=valColStyle))
@@ -205,6 +205,10 @@ def getRsltTable(testType):
     #First row: application names
     tr = TableRow()
     table.addElement(tr)
+    tc = TableCell() #empty cell
+    tr.addElement(tc)
+    tc = TableCell() #empty cell
+    tr.addElement(tc)
     tc = TableCell() #empty cell
     tr.addElement(tc)
     tc = TableCell() #empty cell
@@ -235,6 +239,11 @@ def getRsltTable(testType):
     p = P(stylename=tablecontents,text=unicode("P/R",PWENC))
     tc.addElement(p)
     tc.addElement(addAnn("p-progression, r-regression, x-no change"))
+    tc = TableCell(stylename="THstyle") #empty cell
+    tr.addElement(tc)
+    p = P(stylename=tablecontents,text=unicode("Max last",PWENC))
+    tc.addElement(p)
+    tc.addElement(addAnn("Max grade for the last LO version"))
     tc = TableCell(stylename="THstyle") #empty cell
     tr.addElement(tc)
     p = P(stylename=tablecontents,text=unicode("Sum last",PWENC))
@@ -288,12 +297,18 @@ def getRsltTable(testType):
         tr.addElement(tc)
         p = P(stylename=tablecontents,text=unicode(progreg,PWENC))
         tc.addElement(p)
+
+        # max last
+        lastmax = max([valToGrade(values[testcase][a][1:]) for a in targetAppsSel][-1])
+        tc = TableCell(valuetype="float", value=str(lastmax))
+        tr.addElement(tc)
+
         # sum last
         lastsum = sum([valToGrade(values[testcase][a][1:]) for a in targetAppsSel][-1])
         tc = TableCell(valuetype="float", value=str(lastsum))
         tr.addElement(tc)
 
-        # sum last
+        # sum all
         allsum = sum([sum(valToGrade(values[testcase][a][1:])) for a in targetAppsSel] )
         tc = TableCell(valuetype="float", value=str(allsum))
         tr.addElement(tc)
@@ -333,16 +348,22 @@ def getRsltTable(testType):
             tc = TableCell(valuetype="float", value=str("%.3f"%float(rankinfo[0])), stylename=rankCellStyle)
             tr.addElement(tc)
             for c in rankinfo[1:]:
-                if testType == "print" and not c in tagsp: 
-                    tc = TableCell()
-                    tr.addElement(tc)
-                    p = P(stylename=tablecontents,text=unicode(c,PWENC))
-                    tc.addElement(p)
-                if testType == "roundtrip" and not c in tagsr: 
-                    tc = TableCell()
-                    tr.addElement(tc)
-                    p = P(stylename=tablecontents,text=unicode(c,PWENC))
-                    tc.addElement(p)
+                if testType == "print": 
+                    if c in tagsp: 
+                        tc = TableCell(stylename="C1style")
+                        p = P(stylename=C1,text=unicode(c,PWENC))
+                    else:
+                        tc = TableCell(stylename="C3style")
+                        p = P(stylename=C3,text=unicode(c,PWENC))
+                if testType == "roundtrip":
+                    if c in tagsr: 
+                        tc = TableCell(stylename="C1style")
+                        p = P(stylename=C1,text=unicode(c,PWENC))
+                    else:
+                        tc = TableCell(stylename="C3style")
+                        p = P(stylename=C3,text=unicode(c,PWENC))
+                tr.addElement(tc)
+                tc.addElement(p)
     return table
 
 progdesc='Derive some results from pdf tests'
