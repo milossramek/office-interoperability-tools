@@ -1,8 +1,7 @@
 The goal of the office-interoperability-tools package is assessment of interoperability of various office applications using different office document formats.
  
 The package has three parts: 
-1. Batch conversion and printing of test documents. For this, one needs the bash shell and an office program to be 
-used in testing - the rest is included in the package. The office program must provide a command line interface. 
+1. Batch conversion and printing of test documents. For this, one needs the bash shell and an office program to be used in testing - the rest is included in the package. The office program must provide a command line interface. 
 Conversion and printing was tested on Linux and Windows
 
 2. Evaluation and reporting. For this one needs the bash shell, Python with some installed modules. This was tested on Linux.
@@ -23,8 +22,8 @@ Set environment variables which define applications to be tested on the current 
 
 # use full paths
 export FTPATH="$HOME/OIT"
-# to used Google Docs, you need your own key
-export GOOGLEDOC_PK_FILE="$HOME/.ssh/e0cd31d3d0057333ca6eed556fd429152918d65c-privatekey.p12"
+# to use Google Docs, you need your own key
+export GOOGLEDOC_PK_FILE="$HOME/.ssh/google-docs-privatekey.p12"
 export GDCONVERT="$FTPATH/gdconvert/gdconvert"
 export LO52PROG="/opt/libreoffice5.2/program/soffice"
 export LO51PROG="/opt/libreoffice5.1/program/soffice"
@@ -41,27 +40,27 @@ export WINEPROG="/usr/bin/wine"
 
 #these are specific settings for OO/AO, which should be run in a server mode
 export OO33PORT=8133
-export OO33PROG="$FTPATH/DocumentConverter.py"
+export OO33PROG="$FTPATH/scripts/DocumentConverter.py"
 export OO33PATH="/opt/openoffice.org33/program"
 export AO34PORT=8134
-export AO34PROG="$FTPATH/DocumentConverter.py"
+export AO34PROG="$FTPATH/scripts/DocumentConverter.py"
 export AO34PATH="/opt/openoffice.org3/program"
 export AO40PORT=8140
-export AO40PROG="$FTPATH/DocumentConverter.py"
+export AO40PROG="$FTPATH/scripts/DocumentConverter.py"
 export AO40PATH="/opt/openoffice40/program"
 export AO41PORT=8141
-export AO41PROG="$FTPATH/DocumentConverter.py"
+export AO41PROG="$FTPATH/scripts/DocumentConverter.py"
 export AO41PATH="/opt/openoffice41/program"
 
 
 export AWORDPROG="/usr/bin/abiword"
 export CWORDSPROG="/usr/bin/calligrawords"
 
-# required only for bisection of LO interoperability buds 
+# required only for bisection of LO interoperability bugs 
 export LO_BISECT_PATH="$HOME/LOBisect"
 
 ----------
-On Windows:
+On Windows
 ----------
 Install bash from the CygWin package. 
 Include the following (or similar) to the .bashrc file:
@@ -84,13 +83,13 @@ This saved a lot of work and mess caused by eventual copying of files.
 ----------------------------------
 Evaluation and creation of reports
 ----------------------------------
-Runs only on Linux (instructions for Ubuntu, Mint and similar):
+This part runs only on Linux (instructions for Ubuntu, Mint and similar):
 
 1. install the required tools by
 sudo apt-get install python-pip python-setuptools python-numpy python-scipy python-opencv python-ipdb libpython2.7-dev libjpeg-dev libjpeg-dev libz-dev libtiff5-dev libfreetype6-dev exiftool (maybe some others). Do not install python-tiffile 
 2.  Enter OIT/scripts and run
 sudo python setup.py develop
-This will install a few additional python packages 
+This will install also a few additional python packages 
 
 -----
 SETUP
@@ -126,10 +125,7 @@ The remaining scripts should by run on Linux.
 Results
 -------
 
-The genods.py script creates a report spreadsheet in an ods file with two sheets, one for print tests and roundtrip tests. 
-Each file and each application is graded by four grades in the range 0 (pixel identical result) to 5 (very different), 
-6 (created pdf was empty) and 7 (conversion failed).
-The grades are color coded (green-red scale), if all grades are below 3, they are in blue.
+The genods.py script creates a report spreadsheet in an ods file with two sheets, one for print tests and roundtrip tests.  Each file and each application is graded by four grades in the range 0 (pixel identical result) to 5 (very different), 6 (created pdf was empty) and 7 (conversion failed).  The grades are color coded (green-red scale), if all grades are below 3, they are in blue.
 Meaning of grades can be found in column headers.
 
 The print test: Input file is printed by the tested application (LO) to pdf, which is subsequently compared to pdf printed by the source application (MSO).
@@ -149,4 +145,4 @@ One can open these files directly from the spreadsheed by clicking on cells with
 Automated bisection
 -------------------
 
-Instructions can be found in the bibisecting/README file
+Instructions can be found in file Readme.bibisecting

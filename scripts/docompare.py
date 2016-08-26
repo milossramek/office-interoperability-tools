@@ -71,6 +71,7 @@ def GetLineSegments(itrim):
 	Segment an image in lines and interline spaces
 	Returns lists of both (position width)
 	"""
+        # sum along pixel lines
 	asum = np.sum(itrim, axis=1)
 	abin = asum > 0
 	sp = []
@@ -82,11 +83,11 @@ def GetLineSegments(itrim):
 			lastval = abin[i]
 			if lastval:
 				tx.append(np.array((i,0)))
-				if i>1: 
+				if i>0: 
 					sp[-1][1] = i-sp[-1][0]
 			else:
 				sp.append(np.array((i,0)))
-				if i>1: 
+				if i>0: 
 					tx[-1][1] = i-tx[-1][0]
 	# set the last segment lenght
 	#ipdb.set_trace()
