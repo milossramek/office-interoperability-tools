@@ -63,7 +63,7 @@ def GetLine(img, seglist, seg):
 	"""
 	get the 'seg' line of the 'seglist' list of lines fron the image
 	"""
-	return img[seglist[seg][0]:seglist[seg][0]+seglist[seg][1]]
+	return img[seglist[seg][0]:seglist[seg][0]+seglist[seg][1]].copy()
 
 
 def GetLineSegments(itrim):
@@ -90,7 +90,6 @@ def GetLineSegments(itrim):
 				if i>0: 
 					tx[-1][1] = i-tx[-1][0]
 	# set the last segment lenght
-	#ipdb.set_trace()
 	if tx[-1][1] == 0: tx[-1][1] = itrim.shape[0] - tx[-1][0]
 	if sp==[]:# empy if there is just one line in the image
 		sp.append(np.array((0,0)))
@@ -193,7 +192,8 @@ def ovlLine(im1, im2, shift=0):
 	"""
 	im=np.zeros((max(im1.shape[0],im2.shape[0]) , im1.shape[1], 3))
 	if im1.shape[0] < im2.shape[0]:
-		im[shift:,:,0] = 1-im1
+                im[:]=1
+		im[shift:im1.shape[0]+shift,:,0] = 1-im1
 		im[:,:,1] = 1-im2
 		im[:,:,2] = 1-im2
 	else:
@@ -201,6 +201,47 @@ def ovlLine(im1, im2, shift=0):
 		im[shift:,:,1] = 1-im2
 		im[shift:,:,2] = 1-im2
 	return im
+
+def align(l1, l2, axis):
+    #same dimensions in the axis direction
+    if axis == 1: #horizontal alignment
+        if l1.shape[axis] > l2.shape[axis]:
+            l2=np.pad(l2,((0,0),(0,l1.shape[axis] - l2.shape[axis])),'constant',constant_values=0)
+        else:
+            l1=np.pad(l1,((0,0),(0,l2.shape[axis] - l1.shape[axis])),'constant',constant_values=0)
+    else:
+        if l1.shape[axis] > l2.shape[axis]:
+            l2=np.pad(l2,((0,l1.shape[axis] - l2.shape[axis]), (0,0)),'constant',constant_values=0)
+        else:
+            l1=np.pad(l1,((0,l2.shape[axis] - l1.shape[axis]), (0,0)),'constant',constant_values=0)
+
+
+    sc1 = np.sum(l1, axis=1-axis)
+    sc2 = np.sum(l2, axis=1-axis)
+    cor = np.correlate(sc1,sc2,"same")
+    posErr =  np.argmax(cor)-sc1.shape[0]/2
+
+    #we align l2 
+    l1c = l1.copy()
+    l1c[:] = 0
+    l2c = l2.copy()
+    l2c[:] = 0
+    if axis == 1: #vertical alignment
+        if posErr > 0:
+            l2c[:,posErr:] = l2[:,:-posErr]
+            l2 = l2c
+        elif posErr < 0:
+            l2c[:,:posErr] = l2[:,-posErr:]
+            l2 = l2c
+    else:
+        if posErr > 0:
+            l2c[posErr:,:] = l2[:-posErr,:]
+            l2 = l2c
+        elif posErr < 0:
+            l2c[:posErr,:] = l2[-posErr:,:]
+            l2 = l2c
+    return posErr, l1, l2
+
 
 def alignLineIndex(l1, l2, halign=True):
 	"""
@@ -212,59 +253,29 @@ def alignLineIndex(l1, l2, halign=True):
 	l1 = l1[:,:cw]
 	l2 = l2[:,:cw]
 
-	sc1 = np.sum(l1, axis=0)
-	sc2 = np.sum(l2, axis=0)
-	cor = np.correlate(sc1,sc2,"same")
-	horizPosErr =  np.argmax(cor)-sc1.shape[0]/2
+	horizPosErr = 0
+        if halign:
+            horizPosErr,l1,l2=align(l1,l2,1)
 
-	# align the row horizontally
-	if halign == False: horizPosErr = 0
-	l2c = l2.copy()
-	l2c[:] = 0
-	if horizPosErr > 0:
-		l2c[:,horizPosErr:] = l2[:,:-horizPosErr]
-		l2 = l2c
-	elif horizPosErr < 0:
-		l2c[:,:horizPosErr] = l2[:,-horizPosErr:]
-		l2 = l2c
+        vertPosErr,ll1,ll2=align(l1,l2,0)
 
-	# find position with best alignment in the vertical direction
-	#swap so that l2 is the one with more lines
-        if l1.shape[0] > l2.shape[0]:
-		aux=l1
-		l1=l2
-		l2=aux
-
-	sizedif = l2.shape[0] - l1.shape[0]
-	ovlaps=np.zeros(sizedif+1)
-	for i in range(sizedif+1):
-		ll2 = l2[i:i+l1.shape[0]]
-		ll1 = l1
-		diff = ll1 != ll2
-                if np.sum(ll2) + np.sum(ll1) == 0:
-		    ovlaps[i] = 1.0
-                else:
-		    ovlaps[i] = 1.0 - float(np.sum(diff)) / (np.sum(ll2) + np.sum(ll1))
-
-	bf = ovlaps.argmax(); # best fit position
-        if l2.shape[0] > l1.shape[0]:
-            ll1=l2  # keep the missing lines equal to l2, may help in table borders 
-            ll1[bf:bf+l1.shape[0],:] = l1 
-            #crop l2 to the size of l1 at the best fit position
-            ll2=l2
+        #overlap index
+	diff = ll1 != ll2
+        if np.sum(ll2) + np.sum(ll1) == 0:
+	    ovlapindex = 1.0
         else:
-            ll1=l1
-            ll2=l2
-	overlayedLines = ovlLine(ll1, ll2)
+	    ovlapindex = 1.0 - float(np.sum(diff)) / (np.sum(ll2) + np.sum(ll1))
+
 
 	ld1 = distancetransf(ll1)
 	ld2 = distancetransf(ll2)
-        # if one of the images has only 1 values ignore negative distances
+        # if one of the images has only 1 value ignore negative distances
         if ll1.all() or ll2.all():
             ld1[np.where(ld1<0)]=0
             ld2[np.where(ld2<0)]=0
 
-	return overlayedLines, (abs(horizPosErr), ovlaps[bf], np.average(abs(ld1-ld2)), np.max(abs(ld1-ld2)))
+	overlayedLines = ovlLine(ll2, ll1)
+	return overlayedLines, (abs(horizPosErr), ovlapindex, np.average(abs(ld1-ld2)), np.max(abs(ld1-ld2)))
 
 def lineIndexPage(iarray0, iarray1):
 	"""
@@ -287,13 +298,16 @@ def lineIndexPage(iarray0, iarray1):
 	vh_lines=[] # horizontally aligned lines
 	v_lines=[]  # original lines from iarray1
 	indices=[]
+        #ipdb.set_trace()
 	for i in range(min(len(tx0),len(tx1))):
 	    l0= GetLine(itrim0, tx0, i)
             l1 = GetLine(itrim1, tx1, i)
+            #ipdb.set_trace()
 	    cline, ind = alignLineIndex(l0, l1)
 	    vh_lines.append(cline)
 	    indices.append(ind)
-	    cline, ind = alignLineIndex(GetLine(itrim0, tx0, i), GetLine(itrim1, tx1, i), halign=False)
+	    #cline, ind = alignLineIndex(GetLine(itrim0, tx0, i), GetLine(itrim1, tx1, i), halign=False)
+	    cline, ind = alignLineIndex(l0, l1, halign=False)
 	    v_lines.append(cline)
 	indices = np.array(indices)
 
@@ -315,6 +329,7 @@ def lineIndexPage(iarray0, iarray1):
 
 	#create a page view to display vertically adjusted overlays, taking line spaces from the source (first) page
         # height of the output page: sum of overlayed blobs + sum of spaces from image 1
+        #ipdb.set_trace()
         outheight = ystart0 + sum([b.shape[0] for b in v_lines])+ sum(np.array(sp0)[:,1]) + (iarray0.shape[0] - ystop0) + 10
         #outheight = ystart0 + sum([b.shape[0] for b in v_lines])+ sum(np.array(sp0)[:,1]) 
 	v_page = np.zeros((outheight, iarray0.shape[1], 3), dtype=np.uint8)
@@ -654,6 +669,7 @@ def mainfunc():
 	plainOvlRslt = getPagePixelOverlayIndex(bimg1, bimg2)
 	lineVHOvlPage, lineVOvlPage, lineOvlDistRslt, lineOvlHPosRslt, pageHeightRslt, pageLinesRslt = lineIndexPage(bimg1, bimg2)
  
+        #ipdb.set_trace()
         le1 = 'FeatureDistanceError[mm]: %2.1f '%lineOvlDistRslt
         le2 = ': HorizLinePositionError[mm]: %2.2f '%lineOvlHPosRslt
 	le3 = ': TextHeightError[mm]: %2.2f '%pageHeightRslt
@@ -675,6 +691,7 @@ def mainfunc():
 	if overlayStyle == 'p' or overlayStyle == 'a':
             saveRslt('p',  'Page overlay, no alignment', bimg1, bimg2, Names[0], Names[1], plainOvlRslt+le3, rsltText, outfile)
 
+        #ipdb.set_trace()
 	if overlayStyle == 'l' or overlayStyle == 'a':
             saveRslt('l', 'Page overlay, vertically aligned lines', lineVOvlPage, None, Names[0], Names[1], le2, rsltText, outfile)
 
