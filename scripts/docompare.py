@@ -190,7 +190,7 @@ def ovlLine(im1, im2, shift=0):
 	"""
 	overlay two lines with different height
 	"""
-	im=np.zeros((max(im1.shape[0],im2.shape[0]) , im1.shape[1], 3))
+	im=np.zeros((max(im1.shape[0],im2.shape[0]), im1.shape[1], 3))
 	if im1.shape[0] < im2.shape[0]:
                 im[:]=1
 		im[shift:im1.shape[0]+shift,:,0] = 1-im1
@@ -274,7 +274,7 @@ def alignLineIndex(l1, l2, halign=True):
             ld1[np.where(ld1<0)]=0
             ld2[np.where(ld2<0)]=0
 
-	overlayedLines = ovlLine(ll2, ll1)
+	overlayedLines = ovlLine(ll1, ll2)
 	return overlayedLines, (abs(horizPosErr), ovlapindex, np.average(abs(ld1-ld2)), np.max(abs(ld1-ld2)))
 
 def lineIndexPage(iarray0, iarray1):
