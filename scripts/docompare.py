@@ -203,60 +203,68 @@ def ovlLine(im1, im2, shift=0):
 	return im
 
 def align(l1, l2, axis):
-    #same dimensions in the axis direction
-    if axis == 1: #horizontal alignment
-        if l1.shape[axis] > l2.shape[axis]:
-            l2=np.pad(l2,((0,0),(0,l1.shape[axis] - l2.shape[axis])),'constant',constant_values=0)
-        else:
-            l1=np.pad(l1,((0,0),(0,l2.shape[axis] - l1.shape[axis])),'constant',constant_values=0)
-    else:
-        if l1.shape[axis] > l2.shape[axis]:
-            l2=np.pad(l2,((0,l1.shape[axis] - l2.shape[axis]), (0,0)),'constant',constant_values=0)
-        else:
-            l1=np.pad(l1,((0,l2.shape[axis] - l1.shape[axis]), (0,0)),'constant',constant_values=0)
-
-
-    sc1 = np.sum(l1, axis=1-axis)
-    sc2 = np.sum(l2, axis=1-axis)
-    cor = np.correlate(sc1,sc2,"same")
-    posErr =  np.argmax(cor)-sc1.shape[0]/2
-
-    #we align l2 
-    l1c = l1.copy()
-    l1c[:] = 0
-    l2c = l2.copy()
-    l2c[:] = 0
-    if axis == 1: #vertical alignment
+    if axis == 1: #horizontal alignment, we do not care about the right line end
+	#cw = min(l2.shape[1],l1.shape[1])
+	#l1 = l1[:,:cw]
+	#l2 = l2[:,:cw]
+        #compute correlation
+        sc1 = np.sum(l1, axis=1-axis)
+        sc2 = np.sum(l2, axis=1-axis)
+        cor = np.correlate(sc1,sc2,"same")
+        posErr =  np.argmax(cor)-sc1.shape[0]/2
+        #place at right position
         if posErr > 0:
+            l2c = l2.copy()
+            l2c[:]=0
             l2c[:,posErr:] = l2[:,:-posErr]
             l2 = l2c
         elif posErr < 0:
-            l2c[:,:posErr] = l2[:,-posErr:]
-            l2 = l2c
-    else:
+            l1c = l1.copy()
+            l1c[:]=0
+            l1c[:,-posErr:] = l1[:,:posErr]
+            l1=l1c
+    else: #vertical alignment, we cate about both ends
+        #compute correlation
+        sc1 = np.sum(l1, axis=1-axis)
+        sc2 = np.sum(l2, axis=1-axis)
+        cor = np.correlate(sc1,sc2,"same")
+        posErr =  np.argmax(cor)-sc1.shape[0]/2
+        #place at right position
         if posErr > 0:
+            l2c=l2.copy()
+            l2c[:]=0
             l2c[posErr:,:] = l2[:-posErr,:]
             l2 = l2c
         elif posErr < 0:
-            l2c[:posErr,:] = l2[-posErr:,:]
-            l2 = l2c
+            l1c=l1.copy()
+            l1c[:]=0
+            l1c[-posErr:,:]=l1[:posErr,:]
+            l1 = l1c
     return posErr, l1, l2
-
 
 def alignLineIndex(l1, l2, halign=True):
 	"""
 	compute several line similarity measures with horizontal and vertical alignment
 	"""
-	# align in the horizontal direction first
-	# estimate horizontal position error by correletion
-	cw = min(l2.shape[1],l1.shape[1])
-	l1 = l1[:,:cw]
-	l2 = l2[:,:cw]
 
+        #make the same width
+        if l1.shape[1] > l2.shape[1]:
+            l2=np.pad(l2,((0,0),(0,l1.shape[1] - l2.shape[1])),'constant',constant_values=0)
+        else:
+            l1=np.pad(l1,((0,0),(0,l2.shape[1] - l1.shape[1])),'constant',constant_values=0)
+
+        #make the same height
+        if l1.shape[0] > l2.shape[0]:
+            l2=np.pad(l2,((0,l1.shape[0] - l2.shape[0]), (0,0)),'constant',constant_values=0)
+        else:
+            l1=np.pad(l1,((0,l2.shape[0] - l1.shape[0]), (0,0)),'constant',constant_values=0)
+
+	# align in the horizontal direction
 	horizPosErr = 0
         if halign:
             horizPosErr,l1,l2=align(l1,l2,1)
 
+	# align in the vertical direction
         vertPosErr,ll1,ll2=align(l1,l2,0)
 
         #overlap index
@@ -298,11 +306,9 @@ def lineIndexPage(iarray0, iarray1):
 	vh_lines=[] # horizontally aligned lines
 	v_lines=[]  # original lines from iarray1
 	indices=[]
-        #ipdb.set_trace()
 	for i in range(min(len(tx0),len(tx1))):
 	    l0= GetLine(itrim0, tx0, i)
             l1 = GetLine(itrim1, tx1, i)
-            #ipdb.set_trace()
 	    cline, ind = alignLineIndex(l0, l1)
 	    vh_lines.append(cline)
 	    indices.append(ind)
@@ -329,7 +335,6 @@ def lineIndexPage(iarray0, iarray1):
 
 	#create a page view to display vertically adjusted overlays, taking line spaces from the source (first) page
         # height of the output page: sum of overlayed blobs + sum of spaces from image 1
-        #ipdb.set_trace()
         outheight = ystart0 + sum([b.shape[0] for b in v_lines])+ sum(np.array(sp0)[:,1]) + (iarray0.shape[0] - ystop0) + 10
         #outheight = ystart0 + sum([b.shape[0] for b in v_lines])+ sum(np.array(sp0)[:,1]) 
 	v_page = np.zeros((outheight, iarray0.shape[1], 3), dtype=np.uint8)
@@ -669,7 +674,6 @@ def mainfunc():
 	plainOvlRslt = getPagePixelOverlayIndex(bimg1, bimg2)
 	lineVHOvlPage, lineVOvlPage, lineOvlDistRslt, lineOvlHPosRslt, pageHeightRslt, pageLinesRslt = lineIndexPage(bimg1, bimg2)
  
-        #ipdb.set_trace()
         le1 = 'FeatureDistanceError[mm]: %2.1f '%lineOvlDistRslt
         le2 = ': HorizLinePositionError[mm]: %2.2f '%lineOvlHPosRslt
 	le3 = ': TextHeightError[mm]: %2.2f '%pageHeightRslt
@@ -691,7 +695,6 @@ def mainfunc():
 	if overlayStyle == 'p' or overlayStyle == 'a':
             saveRslt('p',  'Page overlay, no alignment', bimg1, bimg2, Names[0], Names[1], plainOvlRslt+le3, rsltText, outfile)
 
-        #ipdb.set_trace()
 	if overlayStyle == 'l' or overlayStyle == 'a':
             saveRslt('l', 'Page overlay, vertically aligned lines', lineVOvlPage, None, Names[0], Names[1], le2, rsltText, outfile)
 
