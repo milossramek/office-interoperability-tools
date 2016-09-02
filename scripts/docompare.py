@@ -388,7 +388,7 @@ def mergeSide(img1, img2):
     ishape = img1.shape
     nshape=(max(img1.shape[0], img2.shape[0]), img1.shape[1]+img2.shape[1]+offset, 3) #shape for numpy
     big=np.zeros(nshape, dtype=np.uint8)
-    big[:]=255
+    big[:]=200
     big[:img1.shape[0],:img1.shape[1]]=img1
     big[:img2.shape[0],img1.shape[1]+offset:]=img2
     return big
