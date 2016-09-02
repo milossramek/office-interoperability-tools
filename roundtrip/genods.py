@@ -8,7 +8,10 @@
 #
 import sys, os, getopt 
 import csv
-import ipdb
+try:
+    import ipdb
+except ImportError:
+    pass
 from odf.opendocument import OpenDocumentSpreadsheet
 from odf.style import Style, TextProperties, ParagraphProperties, TableColumnProperties, TableCellProperties
 from odf.text import P, A
@@ -16,8 +19,6 @@ from odf.table import Table, TableColumn, TableRow, TableCell
 from odf.office import Annotation
 
 PWENC = "utf-8"
-
-#ipdb.set_trace()
 
 progdesc='Derive some results from pdf tests'
 
@@ -89,7 +90,6 @@ def loadCSV(csvfile):
                         elif(reader.line_num == 2): 
                             labels=row[1:vcnt+1]
                         elif(reader.line_num > 2): 
-                            #ipdb.set_trace()#
                             d={}
                             for i in range(len(apps)):
                                 d[apps[i]]=row[1+vcnt*i: 1+vcnt*(i+1)]
@@ -127,7 +127,6 @@ def valToGrade(data):
         """ get grade for individual observed measures
         """
         global FDEMax, HLPEMax, THEMax, LNDMax
-        #ipdb.set_trace()#
         if data[-1] == "empty":
             return [6,6,6,6]
         if data[-1] == "open":
@@ -277,7 +276,6 @@ def getRsltTable(testType):
             p = P(stylename=tablecontents,text=unicode(c,PWENC))
             tc.addElement(p)
 
-    #ipdb.set_trace()
     for testcase in values.keys():
         #testcase=testcase.split('/')[1]
         tr = TableRow()
@@ -316,7 +314,6 @@ def getRsltTable(testType):
         tc = TableCell(valuetype="float", value=str(allsum))
         tr.addElement(tc)
 
-        #ipdb.set_trace()
         for a in targetAppsSel: 
             grades = valToGrade(values[testcase][a][1:])
             #grades = values[testcase][a][1:]
@@ -324,7 +321,6 @@ def getRsltTable(testType):
             #print grades
             viewTypes=['s','p','l','z']
             app, ttype = a.split()
-            #ipdb.set_trace()
             #create pdf path
             #get rid of the suffix
             aux=testcase
@@ -354,9 +350,7 @@ def getRsltTable(testType):
                 tc.addElement(p)
             tc = TableCell(stylename="Csepstyle")
             tr.addElement(tc)
-            #ipdb.set_trace()#
         if ranks:
-            #ipdb.set_trace()
             rankinfo = ranks[testcase.split('/')[1]]
             #tc = TableCell(valuetype="float", value=str("%.3f"%float(rankinfo[0])))
             tc = TableCell(valuetype="float", value=str("%.3f"%float(rankinfo[0])), stylename=rankCellStyle)
