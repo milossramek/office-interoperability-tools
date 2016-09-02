@@ -327,11 +327,15 @@ def lineIndexPage(iarray0, iarray1):
         # create page of horizontally aligned lines
 	ar=ystart0	#the actual row
 	for i in range(min(len(tx0),len(tx1))):
-		vh_page[ar:ar+vh_lines[i].shape[0],xstart0:xstart0+vh_lines[i].shape[1]] = vh_lines[i]
-                if i < len(sp0):
-		    ar += vh_lines[i].shape[0] + sp0[i][1]
-                else:
-		    ar += vh_lines[i].shape[0]
+            #we cut  vh_lines[i] from right, if it is too long
+            awidth= vh_lines[i].shape[1]
+            if xstart0+vh_lines[i].shape[1] > vh_page.shape[1]:
+                awidth = vh_page.shape[1] - xstart0
+            vh_page[ar:ar+vh_lines[i].shape[0],xstart0:xstart0+vh_lines[i].shape[1]] = vh_lines[i][:,:awidth,:]
+            if i < len(sp0):
+                ar += vh_lines[i].shape[0] + sp0[i][1]
+            else:
+                ar += vh_lines[i].shape[0]
 
 	#create a page view to display vertically adjusted overlays, taking line spaces from the source (first) page
         # height of the output page: sum of overlayed blobs + sum of spaces from image 1
@@ -342,14 +346,17 @@ def lineIndexPage(iarray0, iarray1):
 
         # create page of the original lines from iarray1
 	ar=ystart0	#the actual row
-	for i in range(min(len(tx0),len(tx1))):
-	#for i in range(min(len(tx0),len(tx1))-1):
-		v_page[ar:ar+v_lines[i].shape[0],xstart0:xstart0+v_lines[i].shape[1]] = v_lines[i]
-		#ar += v_lines[i].shape[0] + sp0[i][1]
-                if i < len(sp0):
-		    ar += v_lines[i].shape[0] + sp0[i][1]
-                else:
-		    ar += v_lines[i].shape[0]
+        for i in range(min(len(tx0),len(tx1))):
+            #we cut  vh_lines[i] from right, if it is too long
+            awidth= vh_lines[i].shape[1]
+            if xstart0+vh_lines[i].shape[1] > vh_page.shape[1]:
+                awidth = vh_page.shape[1] - xstart0
+            v_page[ar:ar+v_lines[i].shape[0],xstart0:xstart0+v_lines[i].shape[1]] = v_lines[i][:,:awidth,:]
+            #ar += v_lines[i].shape[0] + sp0[i][1]
+            if i < len(sp0):
+                ar += v_lines[i].shape[0] + sp0[i][1]
+            else:
+                ar += v_lines[i].shape[0]
 
 	#height error in pixels
 	heightErr=abs(float(itrim0.shape[0]-itrim1.shape[0]))
