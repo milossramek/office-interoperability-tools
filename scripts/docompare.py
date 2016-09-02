@@ -295,17 +295,11 @@ def lineIndexPage(iarray0, iarray1):
 	# crop the first image and segment it to lines
 	(ystart0, xstart0), (ystop0, xstop0) = getBBox(iarray0)
 	itrim0 = iarray0[ystart0:ystop0, xstart0:xstop0].astype(np.uint8)
-        itrim0 = iarray0
-        xstart0=0
-        (ystop0, xstop0)= (0,0)
 	tx0, sp0 = GetLineSegments(itrim0)
 	
 	# crop the second image and segment it to lines
 	(ystart1, xstart1), (ystop1, xstop1) = getBBox(iarray1)
 	itrim1 = iarray1[ystart1:ystop1, xstart1:xstop1].astype(np.uint8)
-        itrim1 = iarray1
-        (ystart1, xstart1)= (0,0)
-        (ystop1, xstop1)= (0,0)
 	tx1, sp1 = GetLineSegments(itrim1)
 
         # detect merged lines in one set and merge them in the other
