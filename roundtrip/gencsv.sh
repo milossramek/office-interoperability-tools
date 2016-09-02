@@ -57,16 +57,17 @@ done
 
 # get names of pdf files from 
 cd $sourcedir
-filenames=`find . -name \*.pdf|grep -v pair`
+filenames=`find . -name \*.$format -printf '%P\n'`
 cd ..
 
 #get one file with results go get the header
 aux=`echo $filenames|cut -d " " -f 1`
-rsltfile=`basename $aux .pdf`
+rsltfile=`basename $aux .$format`
 rsltdir=`dirname $aux`
 rsltapp=`echo $rtripapps|cut -d " " -f 1`	
 getheader $rsltapp/$rsltdir/$rsltfile-pair-l.pdf
 header=$retval
+
 
 #The first header line
 line="File name,"
@@ -80,13 +81,18 @@ echo $line
 echo $filenames 1>&2
 for f in $filenames;
 do
-	refpdfn=`basename $f .pdf`	#source document without suffix
+	refpdfn=`basename $f .$format`	#source document without suffix
 	ddd=`dirname $f`
 	subdir=${ddd/\.\//}	# get nice subdir path
-	line="$subdir/$refpdfn"	# first line item - file name without suffix
+	#line="$subdir/$refpdfn"	# first line item - file name without suffix
+	if [ $ddd == "." ]; then
+		line="$sourcedir/$refpdfn.$format"	# first line item - file name without suffix
+	else
+		line="$sourcedir/$subdir/$refpdfn.$format"	# first line item - file name without suffix
+	fi
+	echo "Processing $line" 1>&2
 	for app in $rtripapps;
 	do
-		echo "Processing $app/$subdir/$refpdfn" 1>&2
 		#the roundtrip file
 		rsltpdf=$app/$subdir/$refpdfn-pair-l.pdf
 		#echo $rsltpdf

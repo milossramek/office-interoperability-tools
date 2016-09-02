@@ -284,7 +284,10 @@ def getRsltTable(testType):
         table.addElement(tr)
         tc = TableCell()
         tr.addElement(tc)
-        p = P(stylename=tablecontents,text=unicode(testcase,PWENC))
+        #p = P(stylename=tablecontents,text=unicode(testcase,PWENC))
+        p = P(stylename=tablecontents,text=unicode("",PWENC))
+        link = A(type="simple",href="%s%s"%(lpath,testcase), text=testcase)
+        p.addElement(link)
         tc.addElement(p)
         #identify regressions and progressions
         progreg='x'
@@ -321,10 +324,21 @@ def getRsltTable(testType):
             #print grades
             viewTypes=['s','p','l','z']
             app, ttype = a.split()
+            #ipdb.set_trace()
+            #create pdf path
+            #get rid of the suffix
+            aux=testcase
+            suff = testcase.split('.')[-1]
+            if len(suff) != len(testcase):
+                aux=testcase[:-(len(suff)+1)]
+            #get rid of the directory name
+            dname = aux.split('/')[0]
+            if len(dname) != len(aux):
+                aux=aux[(len(dname)+1):]
             if ttype=="roundtrip":
-                pdfpath=lpath+app+"/"+testcase+"-pair"
+                pdfpath=lpath+app+"/"+aux+"-pair"
             else:
-                pdfpath=lpath+app+"/"+testcase+"."+app+"-pair"
+                pdfpath=lpath+app+"/"+aux+"."+app+"-pair"
             for (grade, viewType) in zip(reversed(grades), viewTypes):   # we do not show the PPOI value
                 if max(grades) > 2:
                     tc = TableCell(valuetype="float", value=str(grade), stylename='C'+str(int(grade))+'style')
@@ -414,7 +428,7 @@ textdoc = OpenDocumentSpreadsheet()
 # Create automatic styles for the column widths.
 # ODF Standard section 15.9.1
 nameColStyle = Style(name="nameColStyle", family="table-column")
-nameColStyle.addElement(TableColumnProperties(columnwidth="4cm"))
+nameColStyle.addElement(TableColumnProperties(columnwidth="6cm"))
 textdoc.automaticstyles.addElement(nameColStyle)
 
 tagColStyle = Style(name="tagColStyle", family="table-column")
