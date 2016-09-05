@@ -8,6 +8,7 @@
 #
 import sys, os, getopt 
 import csv
+import numpy as np
 try:
     import ipdb
 except ImportError:
@@ -107,7 +108,7 @@ def loadRanks(csvfile):
         with open(csvfile, 'rb') as csvfile:
                 reader = csv.reader(csvfile, delimiter=' ', quoting=csv.QUOTE_NONE)
                 for row in reader:
-                    values[row[0].split('.')[0]] = row[1:]
+                    values[row[0]] = row[1:]
         return values
 
 def loadTags(csvfile):
@@ -237,7 +238,7 @@ def getRsltTable(testType):
     tr.addElement(tc)
     p = P(stylename=tablecontents,text=unicode("P/R",PWENC))
     tc.addElement(p)
-    tc.addElement(addAnn("p-progression, r-regression, x-no change"))
+    tc.addElement(addAnn("Negative: progression, positive: regression, 0: no change"))
     tc = TableCell(stylename="THstyle") #empty cell
     tr.addElement(tc)
     p = P(stylename=tablecontents,text=unicode("Max last",PWENC))
@@ -289,15 +290,20 @@ def getRsltTable(testType):
         tc.addElement(p)
         #identify regressions and progressions
         progreg='x'
-        mgrades = [sum(valToGrade(values[testcase][a][1:])) for a in targetAppsSel] 
-        if mgrades [-1] < max(mgrades[:-1]):
-            progreg="p"
-        elif mgrades [-1] > min(mgrades[:-1]):
-            progreg="r"
-        tc = TableCell()
+        #mgrades = [sum(valToGrade(values[testcase][a][1:])) for a in targetAppsSel] 
+        agrades = np.array([valToGrade(values[testcase][a][1:]) for a in targetAppsSel])
+        lastgrade=agrades[-1]
+        maxgrade=agrades.max(axis=0)
+        mingrade=agrades.min(axis=0)
+        #ipdb.set_trace()
+        if (lastgrade>mingrade).any():  #We have regression
+            progreg=str((lastgrade-mingrade).max())
+        else:
+            progreg=str((lastgrade-maxgrade).min())
+        tc = TableCell(valuetype="float", value=progreg)
         tr.addElement(tc)
-        p = P(stylename=tablecontents,text=unicode(progreg,PWENC))
-        tc.addElement(p)
+        #p = P(stylename=tablecontents,text=unicode(progreg,PWENC))
+        #tc.addElement(p)
 
         # max last
         lastmax = max([valToGrade(values[testcase][a][1:]) for a in targetAppsSel][-1])
@@ -357,19 +363,27 @@ def getRsltTable(testType):
             tr.addElement(tc)
             for c in rankinfo[1:]:
                 if testType == "print": 
-                    if c in tagsp: 
-                        tc = TableCell(stylename="C1style")
-                        p = P(stylename=C1,text=unicode(c,PWENC))
+                    if tagsp:
+                        if c in tagsp: 
+                            tc = TableCell(stylename="C1style")
+                            p = P(stylename=C1,text=unicode(c,PWENC))
+                        else:
+                            tc = TableCell(stylename="C3style")
+                            p = P(stylename=C3,text=unicode(c,PWENC))
                     else:
-                        tc = TableCell(stylename="C3style")
-                        p = P(stylename=C3,text=unicode(c,PWENC))
+                        tc = TableCell(stylename="tagColStyle")
+                        p = P(stylename=tagColStyle,text=unicode(c,PWENC))
                 if testType == "roundtrip":
-                    if c in tagsr: 
-                        tc = TableCell(stylename="C1style")
-                        p = P(stylename=C1,text=unicode(c,PWENC))
+                    if tagsr:
+                        if c in tagsr: 
+                            tc = TableCell(stylename="C1style")
+                            p = P(stylename=C1,text=unicode(c,PWENC))
+                        else:
+                            tc = TableCell(stylename="C3style")
+                            p = P(stylename=C3,text=unicode(c,PWENC))
                     else:
-                        tc = TableCell(stylename="C3style")
-                        p = P(stylename=C3,text=unicode(c,PWENC))
+                        tc = TableCell(stylename="tagColStyle")
+                        p = P(stylename=tagColStyle,text=unicode(c,PWENC))
                 tr.addElement(tc)
                 tc.addElement(p)
     return table
