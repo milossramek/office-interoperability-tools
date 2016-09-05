@@ -140,6 +140,21 @@ Four different views are generated for each test:
 - page overlay with verically and horizontally alignned lines (files xxx-z.pdf)
 
 One can open these files directly from the spreadsheed by clicking on cells with the ">" character.  
+
+
+-------------
+Document rank
+-------------
+
+File roundtrip/gtagfreq.pickle contains information how often individual tags occur in documents. This information was extracted from about 1600 docx document downloaded from internet.
+
+It can be used by the genods script to add this information to the report:
+1. Create ranks.csv file with list of used tags for each tested document by
+docxtags.py -r path_to/gtagfreq.pickle path_to/*.docx > ranks.csv 
+2. Use it to create report:
+../genods.py -i all.csv -o rslt.ods  -r rank.csv
+Information about the file rank (i.e. frequency of the least frequent tag in the document) and list of tags will be added at the end of each row. The tags are sorted by their decreasing occurence frequency.
+
  
 -------------------
 Automated bisection
