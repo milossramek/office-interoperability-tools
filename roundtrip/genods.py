@@ -108,7 +108,7 @@ def loadRanks(csvfile):
         with open(csvfile, 'rb') as csvfile:
                 reader = csv.reader(csvfile, delimiter=' ', quoting=csv.QUOTE_NONE)
                 for row in reader:
-                    values[row[0]] = row[1:]
+                    values[row[0].split("/")[-1]] = row[1:]
         return values
 
 def loadTags(csvfile):
@@ -357,7 +357,7 @@ def getRsltTable(testType):
             tc = TableCell(stylename="Csepstyle")
             tr.addElement(tc)
         if ranks:
-            rankinfo = ranks[testcase.split('/')[1]]
+            rankinfo = ranks[testcase.split('/')[-1]]
             #tc = TableCell(valuetype="float", value=str("%.3f"%float(rankinfo[0])))
             tc = TableCell(valuetype="float", value=str("%.3f"%float(rankinfo[0])), stylename=rankCellStyle)
             tr.addElement(tc)

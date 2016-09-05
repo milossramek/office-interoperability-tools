@@ -12,7 +12,7 @@ setup(
 	license = "GPLv3",
 	#data_files = data_files,
 	packages = find_packages(),
-	scripts = ['docompare.py', 'dogood.sh'],
+	scripts = ['docompare.py', 'dogood.sh', 'docxtags.py'],
 	install_requires=[
 		'tifffile>=0.4',
 		'Pillow>=2.6.1',
