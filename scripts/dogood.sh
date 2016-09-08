@@ -99,7 +99,7 @@ then
 	fi
 fi
 
-checkLO
+#checkLO
 
 # check the tested application
 if [ -x $libreoffice ]
