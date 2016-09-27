@@ -328,19 +328,11 @@ def getRsltTable(testType):
             viewTypes=['s','p','l','z']
             app, ttype = a.split()
             #create pdf path
-            #get rid of the suffix
-            aux=testcase
-            suff = testcase.split('.')[-1]
-            if len(suff) != len(testcase):
-                aux=testcase[:-(len(suff)+1)]
-            #get rid of the directory name
-            dname = aux.split('/')[0]
-            if len(dname) != len(aux):
-                aux=aux[(len(dname)+1):]
+            filename=testcase.split("/")[-1]
             if ttype=="roundtrip":
-                pdfpath=lpath+app+"/"+aux+"-pair"
+                pdfpath=lpath+app+"/"+filename+"-pair"
             else:
-                pdfpath=lpath+app+"/"+aux+"."+app+"-pair"
+                pdfpath=lpath+app+"/"+filename+"."+app+"-pair"
             for (grade, viewType) in zip(reversed(grades), viewTypes):   # we do not show the PPOI value
                 if max(grades) > 2:
                     tc = TableCell(valuetype="float", value=str(grade), stylename='C'+str(int(grade))+'style')

@@ -56,16 +56,20 @@ do
 done
 
 # get names of pdf files from 
+filenames=""
 cd $sourcedir
-filenames=`find . -name \*.$format -printf '%P\n'`
+for fmt in $format; do
+	aux=`find . -name \*.$fmt -printf '%P\n'`
+	filenames="$aux $filenames"
+done
 cd ..
 
 #get one file with results go get the header
 aux=`echo $filenames|cut -d " " -f 1`
-rsltfile=`basename $aux .$format`
+rsltfile=`basename $aux .$fmt`
 rsltdir=`dirname $aux`
 rsltapp=`echo $rtripapps|cut -d " " -f 1`	
-getheader $rsltapp/$rsltdir/$rsltfile-pair-l.pdf
+getheader $rsltapp/$rsltdir/$rsltfile.$fmt-pair-l.pdf
 header=$retval
 
 
@@ -78,17 +82,17 @@ line=","
 for a in $rtripapps; do line="$line $header, $header," ; done
 echo $line
 
-echo $filenames 1>&2
 for f in $filenames;
 do
-	refpdfn=`basename $f .$format`	#source document without suffix
+	#refpdfn=`basename $f .$format`	#source document without suffix
+	refpdfn=`basename $f`	#source document without suffix
 	ddd=`dirname $f`
 	subdir=${ddd/\.\//}	# get nice subdir path
 	#line="$subdir/$refpdfn"	# first line item - file name without suffix
 	if [ $ddd == "." ]; then
-		line="$sourcedir/$refpdfn.$format"	# first line item - file name without suffix
+		line="$sourcedir/$refpdfn"	# first line item - file name without suffix
 	else
-		line="$sourcedir/$subdir/$refpdfn.$format"	# first line item - file name without suffix
+		line="$sourcedir/$subdir/$refpdfn"	# first line item - file name without suffix
 	fi
 	echo "Processing $line" 1>&2
 	for app in $rtripapps;

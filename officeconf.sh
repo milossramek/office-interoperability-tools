@@ -211,16 +211,16 @@ then
 fi
 
 # git master
-if [ -x "$LO4MPROG" ]
+if [ -x "$LOGITPROG" ]
 then
-	canconvertLO4M=1	# we can convert from source type to target types
-	canprintLO4M=1		# we can print to pdf
-	#usage: convLO4M docx file.odf #converts the given file to docx
-	convLO4M() { $LO4MPROG --headless --convert-to $1 $2 &> /dev/null; }
-	sourceLO4M() { echo "odt"; }
-	targetLO4M() { echo "rtf docx doc"; }
-	#usage: printLO4M pdf file.rtf #prints the given file to pdf
-	printLO4M() { $LO4MPROG --headless --convert-to pdf $1 &> /dev/null; }
+	canconvertLOGIT=1	# we can convert from source type to target types
+	canprintLOGIT=1		# we can print to pdf
+	#usage: convLOGIT docx file.odf #converts the given file to docx
+	convLOGIT() { $LOGITPROG --headless --convert-to $1 $2 &> /dev/null; }
+	sourceLOGIT() { echo "odt"; }
+	targetLOGIT() { echo "rtf docx doc"; }
+	#usage: printLOGIT pdf file.rtf #prints the given file to pdf
+	printLOGIT() { $LOGITPROG --headless --convert-to pdf $1 &> /dev/null; }
 fi
 
 #Open Office 3.3

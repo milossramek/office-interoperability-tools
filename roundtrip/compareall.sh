@@ -55,7 +55,8 @@ while true ; do
 done
 shift $(expr $OPTIND - 1 )
 
-#get list of source pdfs. We assume the same structure and files in the targer directories
+#get list of source pdfs. We assume the same structure and files in the target directories
+# file names: bullets.docx.pdf
 cd $sourcedir
 pdfs=`find . -name \*.pdf|grep -v pair|sort -n -k 1.7,1.9`
 cd ..
