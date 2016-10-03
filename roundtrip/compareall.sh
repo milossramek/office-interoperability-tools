@@ -24,19 +24,21 @@ function cmp ()
 	tpdf=$2/$subdir/$refpdfn	#target document with nice path without suffix
 	#echo tpdf $tpdf
 	
-	if [ ! -e "${tpdf}-pair-l.pdf" ];
+	#if [ ! -e "${tpdf}-pair-l.pdf" ];
+	if [ ! -e "${tpdf}-pair-l.pdf" ] || [ "${tpdf}-pair-l.pdf" -ot "$spdf" ];
 	then
 		echo Creating pairs for  $tpdf
 		docompare.py -t 250 -a -o $tpdf-pair $spdf $tpdf.pdf 2>/dev/null &
-	else
-		echo Pairs up-to-date for $tpdf
+	#else
+		#echo Pairs up-to-date for $tpdf
 	fi
-	if [ ! -e "${tpdf}.$2-pair-l.pdf" ];
+	#if [ ! -e "${tpdf}.$2-pair-l.pdf" ];
+	if [ ! -e "${tpdf}.$2-pair-l.pdf" ] || [ "${tpdf}.$2-pair-l.pdf" -ot "$spdf" ];
 	then
 		echo Creating pairs for  $tpdf.$2
 		docompare.py -t 250 -a -o $tpdf.$2-pair $spdf $tpdf.$2.pdf 2>/dev/null
-	else
-		echo Pairs up-to-date for $tpdf.$2
+	#else
+		##echo Pairs up-to-date for $tpdf.$2
 	fi
 }
 

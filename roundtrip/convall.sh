@@ -44,8 +44,8 @@ for rtapp in `echo $rtripapps`; do
 				# output: LO52/bullets.doc.LO52.pdf
 				if [ ! -e "$ofile2" ] || [ "$ofile2" -ot "$ifile" ]; then
 					timeout 30s ../doconv.sh -f pdf -a $rtapp -i $ifile -o $ofile2
-				else
-					echo "$ofile is up to date" 
+				#else
+					#echo "$ofile is up to date" 
 				fi
 			done
 		done

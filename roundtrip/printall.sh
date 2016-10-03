@@ -18,9 +18,9 @@ then
 				ofile=`basename $ifile`.pdf
 				dir=`dirname $i`
 				cd $dir
-				#if [ ! -e "$ofile" ] || [ "$ofile" -ot "$ifile" ];
+				if [ ! -e "$ofile" ] || [ "$ofile" -ot "$ifile" ];
 				# files already have LO51 in their name, no renaming necessary
-				if [ ! -e "$ofile" ];
+				#if [ ! -e "$ofile" ];
 				then
 					echo Printing $ifile in $dir to $ofile 
 					# apps in general cannot create specific file but just $auxpdf
@@ -31,8 +31,8 @@ then
 					# output: LO52/bullets.doc.pdf
 					#rename to contain $fmt in file name
 					mv $auxpdf $ofile
-				else
-					echo "$ofile is up to date" 
+				#else
+					#echo "$ofile is up to date" 
 				fi
 				)
 			done
