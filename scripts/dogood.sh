@@ -126,21 +126,35 @@ then
 	#set id if we are in a git directory
 	if [ -d ".git" ] 
 	then
-		# no paces allowed in IDs
+		# no spaces allowed in IDs
 		targetid="--target-id=LO-`cat .git/HEAD`"
 		targetid=`echo $targetid|tr "[:space:]" "-"`
 		sourceid="--source-id=MS-Office"
 		docompare.py $sourceid $targetid -b -g $grade -a $sourcepdf $targetpdf  >/dev/null 2>&1 
 		#docompare.py $sourceid $targetid -b -g $grade -a $sourcepdf $targetpdf
-		exit $?
+		ostatus=$?
+		# export onlo 0 or one to make git bisect happy
+		if [ $ostatus -ge 1 ]
+		then
+			exit 1
+		else
+			exit 0
+		fi
 	else
 		docompare.py -b -g $grade -a $sourcepdf $targetpdf  >/dev/null 2>&1 
-		exit $?
+		ostatus=$?
+		# export onlo 0 or one to make git bisect happy
+		if [ $ostatus -ge 1 ]
+		then
+			exit 1
+		else
+			exit 0
+		fi
 	fi
 	#docompare.py -b -g $grade -a $sourcepdf $targetpdf 
 else
 	echo "$libreoffice is not executable" 1>&2
 	exit 255	# break the bisection process
 fi
-echo $libreoffice $ifile $sourcepdf $targetpdf
-exit 1
+echo $0: should not get here
+exit 255

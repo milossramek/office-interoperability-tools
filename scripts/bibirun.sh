@@ -78,14 +78,13 @@ fi
 #test if bibisecting is possible
 dogood.sh -g $grade -i $ifile $roundtrip -a latest/program/soffice
 lstatus=$?
-
-if [ $lstatus -gt 1 ]
+if [ $lstatus -eq 255 ]
 then
-	#echo "Command  'dogood.sh -g $grade -i $ifile $roundtrip' has failed."
-	#exit 1
-#fi
-#if [ $lstatus -eq 1 ]
-#then
+	echo "Command  'dogood.sh -g $grade -i $ifile $roundtrip -a latest/program/soffice' has failed."
+	exit 1
+fi
+if [ $lstatus -ge 1 ]
+then
 	echo "A $testtype test, the latest revision is bad"
 else
 	echo "A $testtype test, the latest revision is good"
@@ -94,13 +93,13 @@ fi
 
 dogood.sh -g $grade -i $ifile $roundtrip -a oldest/program/soffice
 ostatus=$?
-if [ $lstatus -gt 1 ]
+if [ $0status -eq 255 ]
 then
-	#echo "Command  'dogood.sh -g $grade -i $ifile $roundtrip' has failed."
-	#exit 1
-#fi
-#if [ $ostatus -eq 1 ]
-#then
+	echo "Command  'dogood.sh -g $grade -i $ifile $roundtrip -a oldest/program/soffice' has failed."
+	exit 1
+fi
+if [ $ostatus -ge 1 ]
+then
 	echo "A $testtype test, the oldest revision is bad"
 else
 	echo "A $testtype test, the oldest revision is good"
