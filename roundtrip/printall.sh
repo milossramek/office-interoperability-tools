@@ -30,7 +30,15 @@ then
 					# output: orig/bullets.doc.pdf
 					# output: LO52/bullets.doc.pdf
 					#rename to contain $fmt in file name
-					mv $auxpdf $ofile
+					if [ ! -e $auxpdf ];
+					then
+						# delete in the case it is there from the previous test
+						# missing file will be in report indicated by grade 7
+						echo Failed to create $ofile
+						rm -f $ofile	
+					else
+						mv $auxpdf $ofile
+					fi
 				#else
 					#echo "$ofile is up to date" 
 				fi
