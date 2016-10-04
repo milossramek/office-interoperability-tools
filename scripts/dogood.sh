@@ -108,9 +108,12 @@ then
 	then
 		targetfile=${bname}roundtrip.$sourcetype
 		targetpdf=${bname}roundtrip.pdf
-		cp $ifile $targetfile
-		$libreoffice --headless --convert-to $sourcetype --outdir $dname $targetfile >/dev/null 2>&1 
-		#msoconvert.sh -f pdf -o $targetpdf $targetfile 2>/dev/null  
+		# copy the file to be conwerted somewhere (/tmp) sine LO cannot convert inplace
+		auxname=`basename $targetfile`
+		cp $ifile /tmp/$auxname
+		$libreoffice --headless --convert-to $sourcetype --outdir $dname /tmp/$auxname >/dev/null 2>&1 
+		#remove targetpdf to be sure in the case MSWord fails
+		rm -f $targetpdf
 		$WINEPROG OfficeConvert --format=pdf --output=$targetpdf $targetfile &>/dev/null
 		#rm $targetfile
 	else

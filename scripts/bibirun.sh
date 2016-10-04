@@ -81,11 +81,11 @@ lstatus=$?
 
 if [ $lstatus -gt 1 ]
 then
-	echo "Command  'dogood.sh -g $grade -i $ifile $roundtrip' has failed."
-	exit 1
-fi
-if [ $lstatus -eq 1 ]
-then
+	#echo "Command  'dogood.sh -g $grade -i $ifile $roundtrip' has failed."
+	#exit 1
+#fi
+#if [ $lstatus -eq 1 ]
+#then
 	echo "A $testtype test, the latest revision is bad"
 else
 	echo "A $testtype test, the latest revision is good"
@@ -94,13 +94,13 @@ fi
 
 dogood.sh -g $grade -i $ifile $roundtrip -a oldest/program/soffice
 ostatus=$?
-if [ $ostatus -eq 255 ]
+if [ $lstatus -gt 1 ]
 then
-	echo "Command  'dogood.sh -g $grade -i $ifile $roundtrip' has failed."
-	exit 1
-fi
-if [ $ostatus -eq 1 ]
-then
+	#echo "Command  'dogood.sh -g $grade -i $ifile $roundtrip' has failed."
+	#exit 1
+#fi
+#if [ $ostatus -eq 1 ]
+#then
 	echo "A $testtype test, the oldest revision is bad"
 else
 	echo "A $testtype test, the oldest revision is good"
