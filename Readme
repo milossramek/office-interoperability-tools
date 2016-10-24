@@ -72,7 +72,10 @@ Replace MS10 by MS07 or MS13 or anything else.
 You can use only one MSOffice program on one system.
 The OfficeConvert.exe program was taken from http://code.officeshots.org/trac/officeshots/browser/trunk/OfficeConvert. It was recompiled and support for one additional format was added. 
 
-AOO and LO were not tested on Windows. Configuration would be perhaps the same as that listed above.
+Comment: LO is in Windows installed with path, where directory names contain spaces ("Program Files"). These scripts cannot work with such paths. Workaround: create link within the cygwin space, for example in your home:
+ls -s  /cygdrive/c/Program\ Files\ \(x86\)/LibreOffice\ 4/program/LibreOffice43
+and in .bashrc add 
+export LO43WIN=/home/xxx/LibreOffice43/soffice.exe
 
 Comment: If an application can directly print and convert files from a command line, it is listed there directly (LO41PROG), if not, a helper application is listed (AO34PROG, MS13PROG)
 

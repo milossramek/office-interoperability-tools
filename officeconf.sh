@@ -150,6 +150,18 @@ then
 	printLO42() { $LO42PROG --headless --convert-to pdf $1 &> /dev/null; }
 fi
 
+if [ -x "$LO42WINPROG" ]
+then
+	canconvertLO42WIN=1	# we can convert from source type to target types
+	canprintLO42WIN=1		# we can print to pdf
+	#usage: convLO42WIN docx file.odf #converts the given file to docx
+	convLO42WIN() { $LO42WINPROG --headless --convert-to $1 $2 &> /dev/null; }
+	sourceLO42WIN() { echo "odt"; }
+	targetLO42WIN() { echo "rtf docx doc"; }
+	#usage: printLO42WIN pdf file.rtf #prints the given file to pdf
+	printLO42WIN() { $LO42WINPROG --headless --convert-to pdf $1 &> /dev/null; }
+fi
+
 if [ -x "$LO43PROG" ]
 then
 	canconvertLO43=1	# we can convert from source type to target types
@@ -160,6 +172,18 @@ then
 	targetLO43() { echo "rtf docx doc"; }
 	#usage: printLO43 pdf file.rtf #prints the given file to pdf
 	printLO43() { $LO43PROG --headless --convert-to pdf $1 &> /dev/null; }
+fi
+
+if [ -x "$LO43WINPROG" ]
+then
+	canconvertLO43WIN=1	# we can convert from source type to target types
+	canprintLO43WIN=1		# we can print to pdf
+	#usage: convLO43WIN docx file.odf #converts the given file to docx
+	convLO43WIN() { $LO43WINPROG --headless --convert-to $1 $2 &> /dev/null; }
+	sourceLO43WIN() { echo "odt"; }
+	targetLO43WIN() { echo "rtf docx doc"; }
+	#usage: printLO43WIN pdf file.rtf #prints the given file to pdf
+	printLO43WIN() { $LO43WINPROG --headless --convert-to pdf $1 &> /dev/null; }
 fi
 
 if [ -x "$LO44PROG" ]
@@ -208,6 +232,54 @@ then
 	targetLO52() { echo "rtf docx doc"; }
 	#usage: printLO52 pdf file.rtf #prints the given file to pdf
 	printLO52() { $LO52PROG --headless --convert-to pdf $1 &> /dev/null; }
+fi
+
+if [ -x "$LO52WINPROG" ]
+then
+	canconvertLO52WIN=1	# we can convert from source type to target types
+	canprintLO52WIN=1		# we can print to pdf
+	#usage: convLO52WIN docx file.odf #converts the given file to docx
+	convLO52WIN() { $LO52WINPROG --headless --convert-to $1 $2 &> /dev/null; }
+	sourceLO52WIN() { echo "odt"; }
+	targetLO52WIN() { echo "rtf docx doc"; }
+	#usage: printLO52WIN pdf file.rtf #prints the given file to pdf
+	printLO52WIN() { $LO52WINPROG --headless --convert-to pdf $1 &> /dev/null; }
+fi
+
+if [ -x "$LO5MLINPROG" ]
+then
+	canconvertLO5MLIN=1	# we can convert from source type to target types
+	canprintLO5MLIN=1		# we can print to pdf
+	#usage: convLO5MLIN docx file.odf #converts the given file to docx
+	convLO5MLIN() { $LO5MLINPROG --headless --convert-to $1 $2 &> /dev/null; }
+	sourceLO5MLIN() { echo "odt"; }
+	targetLO5MLIN() { echo "rtf docx doc"; }
+	#usage: printLO5MLIN pdf file.rtf #prints the given file to pdf
+	printLO5MLIN() { $LO5MLINPROG --headless --convert-to pdf $1 &> /dev/null; }
+fi
+
+if [ -x "$LO5MMACPROG" ]
+then
+	canconvertLO5MMAC=1	# we can convert from source type to target types
+	canprintLO5MMAC=1		# we can print to pdf
+	#usage: convLO5MMAC docx file.odf #converts the given file to docx
+	convLO5MMAC() { $LO5MMACPROG --headless --convert-to $1 $2 &> /dev/null; }
+	sourceLO5MMAC() { echo "odt"; }
+	targetLO5MMAC() { echo "rtf docx doc"; }
+	#usage: printLO5MMAC pdf file.rtf #prints the given file to pdf
+	printLO5MMAC() { $LO5MMACPROG --headless --convert-to pdf $1 &> /dev/null; }
+fi
+
+if [ -x "$LO5MWINPROG" ]
+then
+	canconvertLO5MWIN=1	# we can convert from source type to target types
+	canprintLO5MWIN=1		# we can print to pdf
+	#usage: convLO5MWIN docx file.odf #converts the given file to docx
+	convLO5MWIN() { $LO5MWINPROG --headless --convert-to $1 $2 &> /dev/null; }
+	sourceLO5MWIN() { echo "odt"; }
+	targetLO5MWIN() { echo "rtf docx doc"; }
+	#usage: printLO5MWIN pdf file.rtf #prints the given file to pdf
+	printLO5MWIN() { $LO5MWINPROG --headless --convert-to pdf $1 &> /dev/null; }
 fi
 
 # git master
@@ -472,6 +544,7 @@ then
 		#usage: printLO4M pdf file.rtf #prints the given file to pdf
 		printBB50DO() { $BB50DOPROG --headless --convert-to pdf $1 &> /dev/null; }
 	fi
+
 	if [ -x "$LO_BISECT_PATH/lo-linux-dbgutil-daily-till50/latest/program/soffice" ] 
 	then
 		BB50DLPROG=$LO_BISECT_PATH/lo-linux-dbgutil-daily-till50/latest/program/soffice
@@ -547,6 +620,7 @@ then
 		#usage: printLO4M pdf file.rtf #prints the given file to pdf
 		printBB53DO() { $BB53DOPROG --headless --convert-to pdf $1 &> /dev/null; }
 	fi
+
 	if [ -x "$LO_BISECT_PATH/lo-linux-dbgutil-daily/latest/program/soffice" ] 
 	then
 		BB53DLPROG=$LO_BISECT_PATH/lo-linux-dbgutil-daily/latest/program/soffice
