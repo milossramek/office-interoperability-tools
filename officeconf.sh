@@ -42,6 +42,10 @@
 #export FTPATH=/cygdrive/e/sbox/DoCmp
 #export MS13PROG=$FTPATH/OfficeConvert/OfficeConvert.exe
 
+
+# there is no timeout on OSX
+function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+
 # start OOo or AOO server, in case we have it
 function startOOoServer()
 {
@@ -208,6 +212,18 @@ then
 	targetLO52() { echo "rtf docx doc"; }
 	#usage: printLO52 pdf file.rtf #prints the given file to pdf
 	printLO52() { $LO52PROG --headless --convert-to pdf $1 &> /dev/null; }
+fi
+
+if [ -x "$LO52MACPROG" ]
+then
+	canconvertLO52MAC=1	# we can convert from source type to target types
+	canprintLO52MAC=1		# we can print to pdf
+	#usage: convLO52MAC docx file.odf #converts the given file to docx
+	convLO52MAC() { $LO52MACPROG --headless --convert-to $1 $2 &> /dev/null; }
+	sourceLO52MAC() { echo "odt"; }
+	targetLO52MAC() { echo "rtf docx doc"; }
+	#usage: printLO52MAC pdf file.rtf #prints the given file to pdf
+	printLO52MAC() { $LO52MACPROG --headless --convert-to pdf $1 &> /dev/null; }
 fi
 
 # git master
