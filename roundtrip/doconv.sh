@@ -70,12 +70,12 @@ then
 	if [ $apptype == "LO" -o $apptype == "AO" -o $apptype == "OO" -o $apptype == "BB" ]
 	then
 		echo "$0 Converting $ifile to $ofile using $rtripapp" 2>&1
-		cp $ifile aux.$fromtype
-		conv$rtripapp xx.$totype aux.$fromtype
-		if [ -e aux.xx.$totype ]
+		cp $ifile auxttt.$fromtype
+		conv$rtripapp xx.$totype auxttt.$fromtype
+		if [ -e auxttt.xx.$totype ]
 		then 
-			mv aux.xx.$totype $ofile
-			rm -f aux.$fromtype 
+			mv auxttt.xx.$totype $ofile
+			rm -f auxttt.$fromtype 
 		else 
 			cp $failed.$totype $ofile
 			echo $0: $ifile failed to open by conv$rtripapp
@@ -84,12 +84,12 @@ then
 	elif [ $apptype == "AW" -o $apptype == "CW" ]
 	then
 		echo "$0 Converting $ifile to $ofile using $rtripapp" 2>&1
-		cp $ifile aux.$fromtype
-		conv$rtripapp $totype aux.$fromtype
-		if [ -e aux.$totype ]
+		cp $ifile auxttt.$fromtype
+		conv$rtripapp $totype auxttt.$fromtype
+		if [ -e auxttt.$totype ]
 		then 
-			mv aux.$totype $ofile
-			rm -f aux.$fromtype 
+			mv auxttt.$totype $ofile
+			rm -f auxttt.$fromtype 
 		else 
 			cp $failed.$totype $ofile
 			echo $0: $ifile failed to open by conv$rtripapp
@@ -98,11 +98,11 @@ then
 	#elif [ $apptype == "AO" ]
 	#then
 		#echo "$0 Converting $ifile to $ofile using $rtripapp" 2>&1
-		#cp $ifile aux.$fromtype
-		##echo conv$rtripapp xx.$totype aux.$fromtype
-		#conv$rtripapp xx.$totype aux.$fromtype
-		#mv aux.xx.$totype $ofile
-		#rm aux.$fromtype 
+		#cp $ifile auxttt.$fromtype
+		##echo conv$rtripapp xx.$totype auxttt.$fromtype
+		#conv$rtripapp xx.$totype auxttt.$fromtype
+		#mv auxttt.xx.$totype $ofile
+		#rm auxttt.$fromtype 
 	elif [ $apptype == "MS" ]
 	then
 		echo "$0: Converting $ifile to $ofile using $rtripapp" 2>&1
@@ -116,12 +116,12 @@ then
 	elif [ $apptype == "GD" ]
 	then
 		echo "$0: Converting $ifile to $ofile using $rtripapp 2>&1"
-		cp $ifile aux.$fromtype
-		$GDCONVERT $totype aux.$fromtype
-		if [ -e aux.$totype ]
+		cp $ifile auxttt.$fromtype
+		$GDCONVERT $totype auxttt.$fromtype
+		if [ -e auxttt.$totype ]
 		then 
-			mv aux.$totype $ofile
-			rm -f aux.$fromtype 
+			mv auxttt.$totype $ofile
+			rm -f auxttt.$fromtype 
 		else 
 			cp $failed.$totype $ofile
 			echo $0: $ifile failed to open by $GDCONVERT

@@ -3,6 +3,7 @@
 
 . config.sh
 . $FTPATH/officeconf.sh 
+checkLO
 
 let canprint=canprint$sourceapp
 if [ $canprint -eq 1 ] 
@@ -34,7 +35,7 @@ then
 					then
 						# delete in the case it is there from the previous test
 						# missing file will be in report indicated by grade 7
-						echo Failed to create $ofile
+						echo Failed to create $dir/$ofile
 						rm -f $ofile	
 					else
 						mv $auxpdf $ofile

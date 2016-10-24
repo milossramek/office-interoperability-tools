@@ -1,6 +1,5 @@
 #!/bin/bash
 #set -o xtrace #be verbose
-
 . config.sh
 . $FTPATH/officeconf.sh 
 
