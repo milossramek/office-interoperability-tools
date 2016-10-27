@@ -43,8 +43,11 @@
 #export MS13PROG=$FTPATH/OfficeConvert/OfficeConvert.exe
 
 
-# there is no timeout on OSX
-function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+# there is no timeout on MACOSX
+if [ ! -x "/usr/bin/timeout" ]
+then
+	function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+fi
 
 # start OOo or AOO server, in case we have it
 function startOOoServer()
@@ -248,6 +251,7 @@ then
 	targetLO52MAC() { echo "rtf docx doc"; }
 	#usage: printLO52MAC pdf file.rtf #prints the given file to pdf
 	printLO52MAC() { $LO52MACPROG --headless --convert-to pdf $1 &> /dev/null; }
+fi
 
 if [ -x "$LO52WINPROG" ]
 then
@@ -459,6 +463,7 @@ then
 		#usage: printLO4M pdf file.rtf #prints the given file to pdf
 		printBB43AO() { $BB43AOPROG --headless --convert-to pdf $1 &> /dev/null; }
 	fi
+
 	if [ -x "$LO_BISECT_PATH/bibisect-43all/latest/program/soffice" ] 
 	then
 		BB43ALPROG=$LO_BISECT_PATH/bibisect-43all/latest/program/soffice
@@ -484,6 +489,7 @@ then
 		#usage: printLO4M pdf file.rtf #prints the given file to pdf
 		printBB42DO() { $BB42DOPROG --headless --convert-to pdf $1 &> /dev/null; }
 	fi
+
 	if [ -x "$LO_BISECT_PATH/lo-linux-dbgutil-daily-till42/latest/program/soffice" ] 
 	then
 		BB42DLPROG=$LO_BISECT_PATH/lo-linux-dbgutil-daily-till42/latest/program/soffice
@@ -509,6 +515,7 @@ then
 		#usage: printLO4M pdf file.rtf #prints the given file to pdf
 		printBB43DO() { $BB43DOPROG --headless --convert-to pdf $1 &> /dev/null; }
 	fi
+
 	if [ -x "$LO_BISECT_PATH/lo-linux-dbgutil-daily-till43/latest/program/soffice" ] 
 	then
 		BB43DLPROG=$LO_BISECT_PATH/lo-linux-dbgutil-daily-till43/latest/program/soffice
@@ -534,6 +541,7 @@ then
 		#usage: printLO4M pdf file.rtf #prints the given file to pdf
 		printBB44DO() { $BB44DOPROG --headless --convert-to pdf $1 &> /dev/null; }
 	fi
+
 	if [ -x "$LO_BISECT_PATH/lo-linux-dbgutil-daily-till44/latest/program/soffice" ] 
 	then
 		BB44DLPROG=$LO_BISECT_PATH/lo-linux-dbgutil-daily-till44/latest/program/soffice
@@ -585,6 +593,7 @@ then
 		#usage: printLO4M pdf file.rtf #prints the given file to pdf
 		printBB51DO() { $BB51DOPROG --headless --convert-to pdf $1 &> /dev/null; }
 	fi
+
 	if [ -x "$LO_BISECT_PATH/lo-linux-dbgutil-daily-till51/latest/program/soffice" ] 
 	then
 		BB51DLPROG=$LO_BISECT_PATH/lo-linux-dbgutil-daily-till51/latest/program/soffice
@@ -610,6 +619,7 @@ then
 		#usage: printLO4M pdf file.rtf #prints the given file to pdf
 		printBB52DO() { $BB52DOPROG --headless --convert-to pdf $1 &> /dev/null; }
 	fi
+
 	if [ -x "$LO_BISECT_PATH/lo-linux-dbgutil-daily-till52/latest/program/soffice" ] 
 	then
 		BB52DLPROG=$LO_BISECT_PATH/lo-linux-dbgutil-daily-till52/latest/program/soffice
