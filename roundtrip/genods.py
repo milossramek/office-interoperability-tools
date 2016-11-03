@@ -328,7 +328,8 @@ def getRsltTable(testType):
             viewTypes=['s','p','l','z']
             app, ttype = a.split()
             #create pdf path
-            filename=testcase.split("/")[-1]
+            #ipdb.set_trace()
+            filename=testcase.split("/",1)[-1]  # get subdirectories, too
             if ttype=="roundtrip":
                 pdfpath=lpath+app+"/"+filename+"-pair"
             else:
