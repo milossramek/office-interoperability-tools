@@ -70,7 +70,8 @@ then
 	do
 		if [ -d "$1" ]; then
   			echo Processing $1
-			for pdfdoc in $pdfs; do cmp `basename $pdfdoc` $1; done
+			#for pdfdoc in $pdfs; do cmp `basename $pdfdoc` $1; done
+			for pdfdoc in $pdfs; do cmp $pdfdoc $1; done
 		else
   			echo Directory $1 does not exist
 		fi
@@ -79,6 +80,7 @@ then
 else
 	for app in `echo $rtripapps`; do
   		echo Processing $app
-		for pdfdoc in $pdfs; do cmp `basename $pdfdoc` $app; done
+		#for pdfdoc in $pdfs; do cmp `basename $pdfdoc` $app; done
+		for pdfdoc in $pdfs; do cmp $pdfdoc $app; done
 	done
 fi
