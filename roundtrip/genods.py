@@ -335,7 +335,7 @@ def getRsltTable(testType):
             else:
                 pdfpath=lpath+app+"/"+filename+"."+app+"-pair"
             for (grade, viewType) in zip(reversed(grades), viewTypes):   # we do not show the PPOI value
-                if max(grades) > 2:
+                if max(grades) > 1:
                     tc = TableCell(valuetype="float", value=str(grade), stylename='C'+str(int(grade))+'style')
                 else:
                     tc = TableCell(valuetype="float", value=str(grade), stylename='CBstyle')
