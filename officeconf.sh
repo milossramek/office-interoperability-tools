@@ -277,6 +277,30 @@ then
 	printLO5MLIN() { $LO5MLINPROG --headless --convert-to pdf $1 &> /dev/null; }
 fi
 
+if [ -x "$LO5M_CLAYOUTLINPROG" ]
+then
+	canconvertLO5M_CLAYOUTLIN=1	# we can convert from source type to target types
+	canprintLO5M_CLAYOUTLIN=1		# we can print to pdf
+	#usage: convLO5M_CLAYOUTLIN docx file.odf #converts the given file to docx
+	convLO5M_CLAYOUTLIN() { export SAL_USE_COMMON_LAYOUT=1; $LO5M_CLAYOUTLINPROG --headless --convert-to $1 $2 &> /dev/null; }
+	sourceLO5M_CLAYOUTLIN() { echo "odt"; }
+	targetLO5M_CLAYOUTLIN() { echo "rtf docx doc"; }
+	#usage: printLO5M_CLAYOUTLIN pdf file.rtf #prints the given file to pdf
+	printLO5M_CLAYOUTLIN() { export SAL_USE_COMMON_LAYOUT=1; $LO5M_CLAYOUTLINPROG --headless --convert-to pdf $1 &> /dev/null; }
+fi
+
+if [ -x "$LO5M_NOCLAYOUTLINPROG" ]
+then
+	canconvertLO5M_NOCLAYOUTLIN=1	# we can convert from source type to target types
+	canprintLO5M_NOCLAYOUTLIN=1		# we can print to pdf
+	#usage: convLO5M_NOCLAYOUTLIN docx file.odf #converts the given file to docx
+	convLO5M_NOCLAYOUTLIN() { unset SAL_USE_COMMON_LAYOUT; $LO5M_NOCLAYOUTLINPROG --headless --convert-to $1 $2 &> /dev/null; }
+	sourceLO5M_NOCLAYOUTLIN() { echo "odt"; }
+	targetLO5M_NOCLAYOUTLIN() { echo "rtf docx doc"; }
+	#usage: printLO5M_NOCLAYOUTLIN pdf file.rtf #prints the given file to pdf
+	printLO5M_NOCLAYOUTLIN() { unset SAL_USE_COMMON_LAYOUT; $LO5M_NOCLAYOUTLINPROG --headless --convert-to pdf $1 &> /dev/null; }
+fi
+
 if [ -x "$LO5MMACPROG" ]
 then
 	canconvertLO5MMAC=1	# we can convert from source type to target types
@@ -289,6 +313,30 @@ then
 	printLO5MMAC() { $LO5MMACPROG --headless --convert-to pdf $1 &> /dev/null; }
 fi
 
+if [ -x "$LO5M_CLAYOUTMACPROG" ]
+then
+	canconvertLO5M_CLAYOUTMAC=1	# we can convert from source type to target types
+	canprintLO5M_CLAYOUTMAC=1		# we can print to pdf
+	#usage: convLO5M_CLAYOUTMAC docx file.odf #converts the given file to docx
+	convLO5M_CLAYOUTMAC() { $LO5M_CLAYOUTMACPROG --headless --convert-to $1 $2 &> /dev/null; }
+	sourceLO5M_CLAYOUTMAC() { echo "odt"; }
+	targetLO5M_CLAYOUTMAC() { echo "rtf docx doc"; }
+	#usage: printLO5M_CLAYOUTMAC pdf file.rtf #prints the given file to pdf
+	printLO5M_CLAYOUTMAC() { $LO5M_CLAYOUTMACPROG --headless --convert-to pdf $1 &> /dev/null; }
+fi
+
+if [ -x "$LO5M_NOCLAYOUTMACPROG" ]
+then
+	canconvertLO5M_NOCLAYOUTMAC=1	# we can convert from source type to target types
+	canprintLO5M_NOCLAYOUTMAC=1		# we can print to pdf
+	#usage: convLO5M_NOCLAYOUTMAC docx file.odf #converts the given file to docx
+	convLO5M_NOCLAYOUTMAC() { $LO5M_NOCLAYOUTMACPROG --headless --convert-to $1 $2 &> /dev/null; }
+	sourceLO5M_NOCLAYOUTMAC() { echo "odt"; }
+	targetLO5M_NOCLAYOUTMAC() { echo "rtf docx doc"; }
+	#usage: printLO5M_NOCLAYOUTMAC pdf file.rtf #prints the given file to pdf
+	printLO5M_NOCLAYOUTMAC() { $LO5M_NOCLAYOUTMACPROG --headless --convert-to pdf $1 &> /dev/null; }
+fi
+
 if [ -x "$LO5MWINPROG" ]
 then
 	canconvertLO5MWIN=1	# we can convert from source type to target types
@@ -299,6 +347,30 @@ then
 	targetLO5MWIN() { echo "rtf docx doc"; }
 	#usage: printLO5MWIN pdf file.rtf #prints the given file to pdf
 	printLO5MWIN() { $LO5MWINPROG --headless --convert-to pdf $1 &> /dev/null; }
+fi
+
+if [ -x "$LO5M_CLAYOUTWINPROG" ]
+then
+	canconvertLO5M_CLAYOUTWIN=1	# we can convert from source type to target types
+	canprintLO5M_CLAYOUTWIN=1		# we can print to pdf
+	#usage: convLO5M_CLAYOUTWIN docx file.odf #converts the given file to docx
+	convLO5M_CLAYOUTWIN() { export SAL_USE_COMMON_LAYOUT=1; $LO5M_CLAYOUTWINPROG --headless --convert-to $1 $2 &> /dev/null; }
+	sourceLO5M_CLAYOUTWIN() { echo "odt"; }
+	targetLO5M_CLAYOUTWIN() { echo "rtf docx doc"; }
+	#usage: printLO5M_CLAYOUTWIN pdf file.rtf #prints the given file to pdf
+	printLO5M_CLAYOUTWIN() { export SAL_USE_COMMON_LAYOUT=1; $LO5M_CLAYOUTWINPROG --headless --convert-to pdf $1 &> /dev/null; }
+fi
+
+if [ -x "$LO5M_NOCLAYOUTWINPROG" ]
+then
+	canconvertLO5M_NOCLAYOUTWIN=1	# we can convert from source type to target types
+	canprintLO5M_NOCLAYOUTWIN=1		# we can print to pdf
+	#usage: convLO5M_NOCLAYOUTWIN docx file.odf #converts the given file to docx
+	convLO5M_NOCLAYOUTWIN() { unset SAL_USE_COMMON_LAYOUT; $LO5M_NOCLAYOUTWINPROG --headless --convert-to $1 $2 &> /dev/null; }
+	sourceLO5M_NOCLAYOUTWIN() { echo "odt"; }
+	targetLO5M_NOCLAYOUTWIN() { echo "rtf docx doc"; }
+	#usage: printLO5M_NOCLAYOUTWIN pdf file.rtf #prints the given file to pdf
+	printLO5M_NOCLAYOUTWIN() { unset SAL_USE_COMMON_LAYOUT; $LO5M_NOCLAYOUTWINPROG --headless --convert-to pdf $1 &> /dev/null; }
 fi
 
 # git master
