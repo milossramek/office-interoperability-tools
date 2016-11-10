@@ -3,10 +3,16 @@
 
 . config.sh
 
+dpi=600		#dpi to render pdfs
+threshold=250	#threshold to identify foreground
+
 function usage
 {
 	echo "$0: Compare pdf files and generate pair pdfs" 1>&2
 	echo "Usage: $0 applist" 1>&2
+	#not functional
+	#echo "    -d int ............ dpi for rendering of pdf files {$dpi}" 1>&2
+	#echo "    -t int ............ threshold to identify foreground {$threshold}" 1>&2
 	echo "If applist is not specified, all applications specified in config.sh will be processed." 1>&2
 }
 
@@ -28,7 +34,7 @@ function cmp ()
 	if [ ! -e "${tpdf}-pair-l.pdf" ] || [ "${tpdf}-pair-l.pdf" -ot "$spdf" ];
 	then
 		echo Creating pairs for  $tpdf
-		docompare.py -t 250 -a -o $tpdf-pair $spdf $tpdf.pdf 2>/dev/null &
+		docompare.py -t $threshold -d $dpi -a -o $tpdf-pair $spdf $tpdf.pdf 2>/dev/null &
 	#else
 		#echo Pairs up-to-date for $tpdf
 	fi
@@ -36,7 +42,7 @@ function cmp ()
 	if [ ! -e "${tpdf}.$2-pair-l.pdf" ] || [ "${tpdf}.$2-pair-l.pdf" -ot "$spdf" ];
 	then
 		echo Creating pairs for  $tpdf.$2
-		docompare.py -t 250 -a -o $tpdf.$2-pair $spdf $tpdf.$2.pdf 2>/dev/null
+		docompare.py -t $threshold -d $dpi -a -o $tpdf.$2-pair $spdf $tpdf.$2.pdf 2>/dev/null
 	#else
 		##echo Pairs up-to-date for $tpdf.$2
 	fi
@@ -51,6 +57,16 @@ while true ; do
     case "$1" in
         -h|--help) 
 		usage; exit 1;;
+	-g)
+		shift
+		dpi=$1
+		shift
+		;;
+	-t)
+		shift
+		threshold=$1
+		shift
+		;;
         --) shift ; break ;;
         *) echo "Internal error!" ; exit 1 ;;
     esac
