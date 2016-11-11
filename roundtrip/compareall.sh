@@ -33,7 +33,7 @@ function cmp ()
 	#if [ ! -e "${tpdf}-pair-l.pdf" ];
 	if [ ! -e "${tpdf}-pair-l.pdf" ] || [ "${tpdf}-pair-l.pdf" -ot "$spdf" ];
 	then
-		echo Creating pairs for  $tpdf
+		echo $3 - Creating pairs for  $tpdf
 		docompare.py -t $threshold -d $dpi -a -o $tpdf-pair $spdf $tpdf.pdf 2>/dev/null
 	#else
 		#echo Pairs up-to-date for $tpdf
@@ -41,7 +41,7 @@ function cmp ()
 	#if [ ! -e "${tpdf}.$2-pair-l.pdf" ];
 	if [ ! -e "${tpdf}.$2-pair-l.pdf" ] || [ "${tpdf}.$2-pair-l.pdf" -ot "$spdf" ];
 	then
-		echo Creating pairs for  $tpdf.$2
+		echo $3 - Creating pairs for  $tpdf.$2
 		docompare.py -t $threshold -d $dpi -a -o $tpdf.$2-pair $spdf $tpdf.$2.pdf 2>/dev/null
 	#else
 		##echo Pairs up-to-date for $tpdf.$2
@@ -78,7 +78,6 @@ shift $(expr $OPTIND - 1 )
 cd $sourcedir
 pdfs=`find . -name \*.pdf|grep -v pair|sort -n -k 1.7,1.9`
 cd ..
-echo $pdfs
 
 if [[ $# -gt 0 ]] 
 then
@@ -87,7 +86,8 @@ then
 		if [ -d "$1" ]; then
   			echo Processing $1
 			#for pdfdoc in $pdfs; do cmp `basename $pdfdoc` $1; done
-			for pdfdoc in $pdfs; do cmp $pdfdoc $1; done
+			count=0
+			for pdfdoc in $pdfs; do ((count++)); cmp $pdfdoc $1 $count; done
 		else
   			echo Directory $1 does not exist
 		fi
@@ -97,6 +97,7 @@ else
 	for app in `echo $rtripapps`; do
   		echo Processing $app
 		#for pdfdoc in $pdfs; do cmp `basename $pdfdoc` $app; done
-		for pdfdoc in $pdfs; do cmp $pdfdoc $app; done
+		count=0
+		for pdfdoc in $pdfs; do ((count++)); cmp $pdfdoc $app $count; done
 	done
 fi
