@@ -34,7 +34,7 @@ function cmp ()
 	if [ ! -e "${tpdf}-pair-l.pdf" ] || [ "${tpdf}-pair-l.pdf" -ot "$spdf" ];
 	then
 		echo Creating pairs for  $tpdf
-		docompare.py -t $threshold -d $dpi -a -o $tpdf-pair $spdf $tpdf.pdf 2>/dev/null &
+		docompare.py -t $threshold -d $dpi -a -o $tpdf-pair $spdf $tpdf.pdf 2>/dev/null
 	#else
 		#echo Pairs up-to-date for $tpdf
 	fi
