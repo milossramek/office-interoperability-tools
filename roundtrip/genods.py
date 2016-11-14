@@ -9,6 +9,7 @@
 import sys, os, getopt 
 import csv
 import numpy as np
+
 try:
     import ipdb
 except ImportError:
@@ -127,6 +128,10 @@ def loadTags(csvfile):
 def valToGrade(data):
         """ get grade for individual observed measures
         """
+	print(data)
+	if not data or data[0] == ' ':
+            return [6,6,6,6]
+
         global FDEMax, HLPEMax, THEMax, LNDMax
         if data[-1] == "empty":
             return [6,6,6,6]
