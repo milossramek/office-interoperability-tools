@@ -30,7 +30,7 @@ for rtapp in `echo $rtripapps`; do
 				# output: LO52/bullets.doc
 				if [ ! -e "$ofile" ] || [ "$ofile" -ot "$ifile" ];
 				then
-					if ! timeout 10s ../doconv.sh -f $fmt -a $rtapp -i $ifile -o $ofile; then
+					if ! timeout 30s ../doconv.sh -f $fmt -a $rtapp -i $ifile -o $ofile; then
 						echo Timeout Reached
 					fi
 				#else
@@ -44,7 +44,7 @@ for rtapp in `echo $rtripapps`; do
 				# input: orig/bullets.doc
 				# output: LO52/bullets.doc.LO52.pdf
 				if [ ! -e "$ofile2" ] || [ "$ofile2" -ot "$ifile" ]; then
-					if ! timeout 10s ../doconv.sh -f pdf -a $rtapp -i $ifile -o $ofile2; then
+					if ! timeout 30s ../doconv.sh -f pdf -a $rtapp -i $ifile -o $ofile2; then
 						echo Timeout Reached
 					fi
 				#else
