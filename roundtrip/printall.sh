@@ -5,6 +5,20 @@
 . $FTPATH/officeconf.sh 
 checkLO
 
+
+# trap ctrl-c and call ctrl_c()
+trap ctrl_c INT
+
+function ctrl_c() {
+        echo "CTRL-C PRESSED"
+
+if pgrep WINWORD.EXE > /dev/null; then
+	echo "Killing WINWORD.EXE"
+	ps -ef | grep WINWORD.EXE | grep -v grep | awk '{print $2}' | xargs kill
+fi
+exit 1
+}
+
 let canprint=canprint$sourceapp
 if [ $canprint -eq 1 ] 
 then
@@ -36,7 +50,7 @@ then
 						# delete in the case it is there from the previous test
 						# missing file will be in report indicated by grade 7
 						echo Failed to create $dir/$ofile
-						rm -f $ofile	
+						rm -f $ofile
 					else
 						mv $auxpdf $ofile
 					fi
