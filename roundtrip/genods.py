@@ -128,7 +128,6 @@ def loadTags(csvfile):
 def valToGrade(data):
         """ get grade for individual observed measures
         """
-	print(data)
 	if not data or data[0] == ' ':
             return [6,6,6,6]
 
