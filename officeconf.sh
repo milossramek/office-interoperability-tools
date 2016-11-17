@@ -464,7 +464,7 @@ then
 	convMSWINE() { $WINEPROG OfficeConvert --format=$1 $2; }
 	sourceMSWINE() { echo "docx"; }
 	targetMSWINE() { echo "rtf odt doc"; }
-	printMSWINE() { $WINEPROG OfficeConvert --format=pdf $1; }
+	printMSWINE() { timeout 30s $WINEPROG OfficeConvert --format=pdf $1; }
 fi
 
 #Microsoft Office 2013

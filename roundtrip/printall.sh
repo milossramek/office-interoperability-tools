@@ -7,15 +7,13 @@ checkLO
 
 
 # trap ctrl-c and call ctrl_c()
-trap ctrl_c INT
+trap killWINWORD INT
 
-function ctrl_c() {
-        echo "CTRL-C PRESSED"
-
-if pgrep WINWORD.EXE > /dev/null; then
-	echo "Killing WINWORD.EXE"
-	ps -ef | grep WINWORD.EXE | grep -v grep | awk '{print $2}' | xargs kill
-fi
+function killWINWORD() {
+	if pgrep WINWORD.EXE > /dev/null; then
+		echo "Killing WINWORD.EXE"
+		ps -ef | grep WINWORD.EXE | grep -v grep | awk '{print $2}' | xargs kill
+	fi
 exit 1
 }
 
@@ -55,7 +53,8 @@ then
 						mv $auxpdf $ofile
 					fi
 				#else
-					#echo "$ofile is up to date" 
+					#echo "$ofile is up to date"
+				killWINWORD
 				fi
 				)
 			done
