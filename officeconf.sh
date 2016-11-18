@@ -78,9 +78,12 @@ function killOOoServer()
 {
 	local apptype=`echo $1|cut -b -2`
 	local appversion=`echo $1|cut -b 3-4`
-	if [ $apptype == "OO" -o $apptype == "AO" ]
+	if [ $apptype == "OO" -o $apptype == "AO" ];
 	then
-		killall soffice 2>/dev/null
+		if pgrep soffice.bin > /dev/null; then
+			echo "Killing soffice.bin"
+			ps -ef | grep soffice.bin | grep -v grep | awk '{print $2}' | xargs kill
+		fi
 	fi
 }
 
@@ -88,7 +91,7 @@ function killOOoServer()
 function checkLO ()
 {
 	SERVICE=soffice.bin
-	ps -a | grep -v grep | grep $SERVICE > /dev/null
+	ps -ef | grep $SERVICE | grep -v grep > /dev/null
 	result=$?
 	if [ "${result}" -eq "0" ] ; then
     		echo "$SERVICE is running. Stop it first"
