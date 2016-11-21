@@ -36,13 +36,14 @@ for rtapp in `echo $rtripapps`; do
 				#else
 					#echo "$ofile is up to date" 
 				fi
-				#ofile2=`dirname $ofile`/`basename $ofile .$fmt`.$rtapp.pdf
+
 				# keep type to enable processing of multiple formats
 				ofile2=`dirname $ofile`/`basename $ofile`.$rtapp.pdf
-				#ls -l $ofile2 $ifile
+
 				# convert to pdf
 				# input: orig/bullets.doc
 				# output: LO52/bullets.doc.LO52.pdf
+
 				if [ ! -e "$ofile2" ] || [ "$ofile2" -ot "$ifile" ]; then
 					if ! timeout 30s $FTPATH/scripts/doconv.sh -f pdf -a $rtapp -i $ifile -o $ofile2; then
 						echo Timeout Reached
