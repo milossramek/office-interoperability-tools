@@ -13,7 +13,7 @@ for rtapp in `echo $rtripapps`; do
 		echo Processing $rtapp
 		#create directory if it does not exit
 		if [ ! -d "$rtapp" ]; then
-			cp -R $sourcedir $rtapp
+			mkdir $rtapp
 			rm -f `find $rtapp -name \*.pdf`
 			for fmt in $format; do
 				rm -f `find $rtapp -name \*.$fmt`
