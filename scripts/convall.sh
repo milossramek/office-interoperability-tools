@@ -31,9 +31,7 @@ for rtapp in `echo $rtripapps`; do
 				if [ ! -e "$ofile" ] || [ "$ofile" -ot "$ifile" ];
 				then
 					if ! timeout 30s $FTPATH/scripts/doconv.sh -f $fmt -a $rtapp -i $ifile -o $ofile; then
-						echo Timeout reached trying to convert to $fmt
-						rm $ifile
-						break
+						echo Timeout Reached
 					fi
 				#else
 					#echo "$ofile is up to date" 
@@ -48,7 +46,7 @@ for rtapp in `echo $rtripapps`; do
 
 				if [ ! -e "$ofile2" ] || [ "$ofile2" -ot "$ifile" ]; then
 					if ! timeout 30s $FTPATH/scripts/doconv.sh -f pdf -a $rtapp -i $ifile -o $ofile2; then
-						echo Timeout reached trying to convert to pdf
+						echo Timeout Reached
 					fi
 				#else
 					#echo "$ofile is up to date" 
