@@ -7,12 +7,21 @@ checkLO
 
 
 # trap ctrl-c and call ctrl_c()
-trap killWINWORD INT
+trap killWINEOFFICE INT
 
-function killWINWORD() {
+function killWINEOFFICE() {
 	if pgrep WINWORD.EXE > /dev/null; then
-		echo "Killing WINWORD.EXE"
+		echo "Killing WORD (WINWORD.EXE)"
 		ps -ef | grep WINWORD.EXE | grep -v grep | awk '{print $2}' | xargs kill
+	fi
+	if pgrep POWERPNT.EXE > /dev/null; then
+		sleep 5s
+		#powerpoint might take some seconds to export to pdf. wait 5 seconds
+		#before killing it
+		if pgrep POWERPNT.EXE > /dev/null; then
+			echo "Killing POWERPOINT (POWERPNT.EXE)"
+			ps -ef | grep POWERPNT.EXE | grep -v grep | awk '{print $2}' | xargs kill
+		fi
 	fi
 exit 1
 }
@@ -45,6 +54,7 @@ then
 					#rename to contain $fmt in file name
 					if [ ! -e $auxpdf ];
 					then
+						killWINEOFFICE
 						# delete in the case it is there from the previous test
 						# missing file will be in report indicated by grade 7
 						echo Failed to create $dir/$ofile
@@ -54,7 +64,6 @@ then
 					fi
 				#else
 					#echo "$ofile is up to date"
-				killWINWORD
 				fi
 				)
 			done
