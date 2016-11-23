@@ -56,5 +56,5 @@ for rtapp in `echo $rtripapps`; do
 	else
 		echo "$0 warning: $rtapp conversion executable not defined. Is this the right system?" 2>&1
 	fi
-	killOOoServer $rtapp
+	killOOoServer
 done

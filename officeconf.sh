@@ -76,14 +76,9 @@ function startOOoServer()
 # kill OOo or AOO server, in case we have it
 function killOOoServer()
 {
-	local apptype=`echo $1|cut -b -2`
-	local appversion=`echo $1|cut -b 3-4`
-	if [ $apptype == "OO" -o $apptype == "AO" ];
-	then
-		if pgrep soffice.bin > /dev/null; then
-			echo "Killing soffice.bin"
-			ps -ef | grep soffice.bin | grep -v grep | awk '{print $2}' | xargs kill
-		fi
+	if pgrep soffice.bin > /dev/null; then
+		echo "Killing soffice.bin"
+		ps -ef | grep soffice.bin | grep -v grep | awk '{print $2}' | xargs kill
 	fi
 }
 
@@ -94,8 +89,13 @@ function checkLO ()
 	ps -ef | grep $SERVICE | grep -v grep > /dev/null
 	result=$?
 	if [ "${result}" -eq "0" ] ; then
-    		echo "$SERVICE is running. Stop it first"
-    		exit 1
+		echo "$SERVICE is running. Stop it first. Would you like to kill it?: (y/n)"
+		read x
+		if echo "$x" | grep -iq "^y" ;then
+		    killOOoServer
+		else
+		        exit 1
+		fi
 	fi
 }
 
