@@ -128,7 +128,7 @@ def loadTags(csvfile):
 def valToGrade(data):
         """ get grade for individual observed measures
         """
-	if not data or data[0] == ' ':
+	if not data or not data[0] or data[0] == ' ':
             return [6,6,6,6]
 
         global FDEMax, HLPEMax, THEMax, LNDMax
