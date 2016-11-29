@@ -58,7 +58,7 @@ done
 # get names of pdf files from 
 filenames=""
 cd $sourcedir
-for fmt in $format; do
+for fmt in $iformat; do
 	aux=`find . -name \*.$fmt -printf '%P\n'`
 	filenames="$aux $filenames"
 done

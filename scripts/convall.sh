@@ -15,42 +15,44 @@ for rtapp in `echo $rtripapps`; do
 		if [ ! -d "$rtapp" ]; then
 			mkdir $rtapp
 			rm -f `find $rtapp -name \*.pdf`
-			for fmt in $format; do
+			for fmt in $iformat; do
 				rm -f `find $rtapp -name \*.$fmt`
 			done
 		fi
-	
-		for fmt in $format; do
-			files=`find $sourcedir -name \*.$fmt`
+		for ifmt in $iformat; do
+			files=`find $sourcedir -name \*.$ifmt`
 			#echo xx $files
 			for ifile in $files; do
-				ofile=${ifile/$sourcedir/$rtapp}
-				# convert to the same file type
-				# input: orig/bullets.doc
-				# output: LO52/bullets.doc
-				if [ ! -e "$ofile" ] || [ "$ofile" -ot "$ifile" ];
-				then
-					if ! timeout 60s $FTPATH/scripts/doconv.sh -f $fmt -a $rtapp -i $ifile -o $ofile; then
-						echo Timeout Reached
+				for ofmt in $oformat; do
+					ofile=${ifile/$ifmt/$ofmt}
+					ofile=${ofile/$sourcedir/$rtapp}
+					# convert to the same file type
+					# input: orig/bullets.doc
+					# output: LO52/bullets.doc
+					if [ ! -e "$ofile" ] || [ "$ofile" -ot "$ifile" ];
+					then
+						if ! timeout 60s $FTPATH/scripts/doconv.sh -f $ofmt -a $rtapp -i $ifile -o $ofile; then
+							echo Timeout Reached
+						fi
+					#else
+						#echo "$ofile is up to date"
 					fi
-				#else
-					#echo "$ofile is up to date" 
-				fi
 
-				# keep type to enable processing of multiple formats
-				ofile2=`dirname $ofile`/`basename $ofile`.$rtapp.pdf
+					# keep type to enable processing of multiple formats
+					ofile2=`dirname $ofile`/`basename $ofile`.$rtapp.pdf
 
-				# convert to pdf
-				# input: orig/bullets.doc
-				# output: LO52/bullets.doc.LO52.pdf
+					# convert to pdf
+					# input: orig/bullets.doc
+					# output: LO52/bullets.doc.LO52.pdf
 
-				if [ ! -e "$ofile2" ] || [ "$ofile2" -ot "$ifile" ]; then
-					if ! timeout 60s $FTPATH/scripts/doconv.sh -f pdf -a $rtapp -i $ifile -o $ofile2; then
-						echo Timeout Reached
+					if [ ! -e "$ofile2" ] || [ "$ofile2" -ot "$ifile" ]; then
+						if ! timeout 60s $FTPATH/scripts/doconv.sh -f pdf -a $rtapp -i $ifile -o $ofile2; then
+							echo Timeout Reached
+						fi
+					#else
+						#echo "$ofile is up to date"
 					fi
-				#else
-					#echo "$ofile is up to date" 
-				fi
+				done
 			done
 		done
 	else
