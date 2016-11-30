@@ -55,24 +55,6 @@ do
 	esac
 done
 
-# get names of pdf files from 
-filenames=""
-cd $sourcedir
-for fmt in $iformat; do
-	aux=`find . -name \*.$fmt -printf '%P\n'`
-	filenames="$aux $filenames"
-done
-cd ..
-
-#get one file with results go get the header
-aux=`echo $filenames|cut -d " " -f 1`
-rsltfile=`basename $aux .$fmt`
-rsltdir=`dirname $aux`
-rsltapp=`echo $rtripapps|cut -d " " -f 1`	
-getheader $rsltapp/$rsltdir/$rsltfile.$fmt-pair-l.pdf
-header=$retval
-
-
 #The first header line
 line="File name,"
 for a in $rtripapps; do line="$line$a roundtrip,,,,,$a print,,,,," ; done
@@ -82,31 +64,50 @@ line=","
 for a in $rtripapps; do line="$line $header, $header," ; done
 echo $line
 
-for f in $filenames;
-do
-	#refpdfn=`basename $f .$format`	#source document without suffix
-	refpdfn=`basename $f`	#source document without suffix
-	ddd=`dirname $f`
-	subdir=${ddd/\.\//}	# get nice subdir path
-	#line="$subdir/$refpdfn"	# first line item - file name without suffix
-	if [ $ddd == "." ]; then
-		line="$sourcedir/$refpdfn"	# first line item - file name without suffix
-	else
-		line="$sourcedir/$subdir/$refpdfn"	# first line item - file name without suffix
-	fi
-	echo "Processing $line" 1>&2
-	for app in $rtripapps;
-	do
-		#the roundtrip file
-		rsltpdf=$app/$subdir/$refpdfn-pair-l.pdf
-		#echo $rsltpdf
-		getvalues $rsltpdf
-		line="$line, $retval"
-		#the printed file
-		rsltpdf=$app/$subdir/$refpdfn.$app-pair-l.pdf
-		#echo $rsltpdf
-		getvalues $rsltpdf
-		line="$line, $retval"
+# get names of pdf files from
+for dir in $sourcedir $sourceapp; do
+	filenames=""
+	cd $dir
+	for fmt in $iformat; do
+		aux=`find . -name \*.$fmt -printf '%P\n'`
+		filenames="$aux $filenames"
 	done
-	echo $line
+	cd ..
+
+	#get one file with results go get the header
+	aux=`echo $filenames|cut -d " " -f 1`
+	rsltfile=`basename $aux .$fmt`
+	rsltdir=`dirname $aux`
+	rsltapp=`echo $rtripapps|cut -d " " -f 1`
+	getheader $rsltapp/$rsltdir/$rsltfile.$fmt-pair-l.pdf
+	header=$retval
+
+	for f in $filenames;
+	do
+		#refpdfn=`basename $f .$format`	#source document without suffix
+		refpdfn=`basename $f`	#source document without suffix
+		ddd=`dirname $f`
+		subdir=${ddd/\.\//}	# get nice subdir path
+		#line="$subdir/$refpdfn"	# first line item - file name without suffix
+		if [ $ddd == "." ]; then
+			line="$dir/$refpdfn"	# first line item - file name without suffix
+		else
+			line="$dir/$subdir/$refpdfn"	# first line item - file name without suffix
+		fi
+		echo "Processing $line" 1>&2
+		for app in $rtripapps;
+		do
+			#the roundtrip file
+			rsltpdf=$app/$subdir/$refpdfn-pair-l.pdf
+			#echo $rsltpdf
+			getvalues $rsltpdf
+			line="$line, $retval"
+			#the printed file
+			rsltpdf=$app/$subdir/$refpdfn.$app-pair-l.pdf
+			#echo $rsltpdf
+			getvalues $rsltpdf
+			line="$line, $retval"
+		done
+		echo $line
+	done
 done
