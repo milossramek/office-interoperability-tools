@@ -29,102 +29,86 @@ exit 1
 let canprint=canprint$sourceapp
 if [ $canprint -eq 1 ] 
 then
-	for a in $sourcedir $rtripapps; do
+
+	if [ ! -d "$sourceapp" ]; then
+		mkdir $sourceapp
+		rm -f `find $sourceapp -name \*.pdf`
+		for fmt in $iformat; do
+			rm -f `find $sourceapp -name \*.$fmt`
+		done
+	fi
+
+
+	for ifmt in $iformat; do
+		for ofmt in $oformat; do
+			if [ $ofmt != $ifmt ]; then
+				printfmt=$ofmt
+				ext=$ofmt
+			else
+				printfmt=pdf
+				ext=$ifmt.$printfmt
+			fi
+			for i in `find $sourcedir -name \*.$ifmt`; do
+				(
+				dir=`dirname $i`
+				ofile=${i/.$ifmt/.$ext}
+				ofile=${ofile/$dir/$sourceapp}
+				auxoutput=${i/.$ifmt/.$printfmt}
+				if [ ! -e "$ofile" ] || [ "$ofile" -ot "$ifile" ];
+				then
+					# keep type to enable processing of multiple formats
+
+					echo Printing $i to $ofile
+					print$sourceapp $printfmt $i &>/dev/null
+					if [ ! -e $auxoutput ];
+					then
+						killWINEOFFICE
+						# delete in the case it is there from the previous test
+						# missing file will be in report indicated by grade 7
+						echo Failed to create $auxoutput
+					else
+						mv $auxoutput $ofile
+					fi
+				fi
+				)
+			done
+		done
+	done
+
+	for a in $sourceapp $rtripapps; do
 		echo Printing in $a
 		for ofmt in $oformat; do
-			if [ $a == $sourcedir ]; then
-				for ifmt in $iformat; do
-						if [ $ofmt != $ifmt ]; then
-							for i in `find $a -name \*.$ifmt`; do
-								(
-								ifile=`basename $i`
-								ofile=`basename $ifile`.$ofmt
-								auxpdf=`basename $ofile .$ofmt`.pdf
-								pdffile=`basename $ofile`.pdf
-								dir=`dirname $i`
-								cd $dir
-								if [ ! -e "$pdffile" ] || [ "$pdffile" -ot "$ofile" ];
-								then
-									# keep type to enable processing of multiple formats
-									auxoutput=`basename $ifile .$ifmt`.$ofmt
-									echo Printing $ifile in $dir to $ofile
-									print$sourceapp $ofmt $ifile &>/dev/null
-									if [ ! -e $auxoutput ];
-									then
-										killWINEOFFICE
-										# delete in the case it is there from the previous test
-										# missing file will be in report indicated by grade 7
-										echo Failed to create $dir/$auxoutput
-									else
-										mv $auxoutput $ofile
-										ifile=`basename $ofile`
-										# keep type to enable processing of multiple formats
-										dir=`dirname $ofile`
-										cd $dir
-										echo Printing $ofile in $dir to $pdffile
-										# apps in general cannot create specific file but just $auxpdf
-										print$sourceapp pdf $ofile &>/dev/null
-										# convert to pdf
-										# input: orig/bullets.doc
-										# output: orig/bullets.doc.pdf
-										# output: LO52/bullets.doc.pdf
-										#rename to contain $ifmt in file name
-										if [ ! -e $auxpdf ];
-										then
-											killWINEOFFICE
-											# delete in the case it is there from the previous test
-											# missing file will be in report indicated by grade 7
-											echo Failed to create $dir/$pdffile
-										else
-											mv $auxpdf $pdffile
-										fi
-										echo Removing $ofile
-										rm -f $ofile
-									fi
-								fi
-								)
-							done
-						fi
-				done
-			fi
-
 			for i in `find $a -name \*.$ofmt`; do
 				(
-				ifile=`basename $i`
-				auxpdf=`basename $ifile .$ofmt`.pdf
-				# keep type to enable processing of multiple formats
-				ofile=`basename $ifile`.pdf
-				dir=`dirname $i`
-				cd $dir
-				if [ ! -e "$ofile" ] || [ "$ofile" -ot "$ifile" ];
+				pdffile=$i.pdf
+				auxpdf=${i/.$ofmt/.pdf}
+				if [ ! -e "$pdffile" ] || [ "$pdffile" -ot "$i" ];
 				# files already have LO51 in their name, no renaming necessary
 				#if [ ! -e "$ofile" ];
 				then
-					echo Printing $ifile in $dir to $ofile
+					echo Printing $i to $pdffile
 					# apps in general cannot create specific file but just $auxpdf
-					print$sourceapp pdf $ifile &>/dev/null
+					print$sourceapp pdf $i &>/dev/null
 					# convert to pdf
 					# input: orig/bullets.doc
 					# output: orig/bullets.doc.pdf
 					# output: LO52/bullets.doc.pdf
-					#rename to contain $ifmt in file name
+					#rename to contain $ofmt in file name
 					if [ ! -e $auxpdf ];
 					then
 						killWINEOFFICE
 						# delete in the case it is there from the previous test
 						# missing file will be in report indicated by grade 7
-						echo Failed to create $dir/$ofile
-						rm -f $ofile
+						echo Failed to create $pdffile
+						rm -f $pdffile
 					else
-						mv $auxpdf $ofile
+						mv $auxpdf $pdffile
 					fi
 				#else
 					#echo "$ofile is up to date"
 				fi
 				)
 			done
-
-
 		done
 	done
 
