@@ -25,7 +25,7 @@ function cmp ()
 	ddd=`dirname $1`
 	subdir=${ddd/\.\//}	# nice subdir path
 	#echo subdir $subdir
-	spdf=$sourcedir/$subdir/$refpdf	#source document with nice path
+	spdf=$sourceapp/$subdir/$refpdf	#source document with nice path
 	#echo spdf $spdf
 	tpdf=$2/$subdir/$refpdfn	#target document with nice path without suffix
 	#echo tpdf $tpdf
@@ -76,7 +76,7 @@ shift $(expr $OPTIND - 1 )
 
 #get list of source pdfs. We assume the same structure and files in the target directories
 # file names: bullets.docx.pdf
-cd $sourcedir
+cd $sourceapp
 pdfs=`find . -name \*.pdf|grep -v pair|sort -n -k 1.7,1.9`
 cd ..
 
