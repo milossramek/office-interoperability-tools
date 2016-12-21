@@ -68,7 +68,7 @@ echo $line
 for dir in $sourcedir $sourceapp; do
 	filenames=""
 	cd $dir
-	for fmt in $iformat; do
+	for fmt in $oformat; do
 		aux=`find . -name \*.$fmt -printf '%P\n'`
 		filenames="$aux $filenames"
 	done
