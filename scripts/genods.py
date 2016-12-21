@@ -200,6 +200,7 @@ def getRsltTable(testType):
         for i in range(len(testLabels)-1):
             table.addElement(TableColumn(stylename=valColStyle))
             table.addElement(TableColumn(stylename=linkColStyle))
+        table.addElement(TableColumn(stylename=rankColStyle))
         table.addElement(TableColumn(stylename=linkColStyle))
     table.addElement(TableColumn(stylename=rankColStyle))
     table.addElement(TableColumn(stylename=tagColStyle))
@@ -268,6 +269,8 @@ def getRsltTable(testType):
             tc = TableCell()    #the merged cell
             tr.addElement(tc)
         tc = TableCell(stylename="Csepstyle")
+        tr.addElement(tc)
+        tc = TableCell(stylename="THstyle")
         tr.addElement(tc)
         #tc = TableCell(stylename="THstyle")
         #tr.addElement(tc)
@@ -351,8 +354,23 @@ def getRsltTable(testType):
                 if showalllinks or a==targetAppsSel[-1]:
                     p.addElement(link)
                 tc.addElement(p)
-            tc = TableCell(stylename="Csepstyle")
+            tc = TableCell(stylename="THstyle")
+
+            if grades == [7,7,7,7]:
+                p = P(stylename=tablecontents,text=unicode("timeout",PWENC))
+                if testType == "roundtrip":
+                    gradesPrint = valToGrade(values[testcase][a.replace(testType, 'print')][1:])
+                    if gradesPrint != [7,7,7,7]:
+                        p = P(stylename=tablecontents,text=unicode("corrupted",PWENC))
+            elif grades == [6,6,6,6]:
+                p = P(stylename=tablecontents,text=unicode("empty",PWENC))
+            else:
+                p = P(stylename=tablecontents,text=unicode("",PWENC))
+            tc.addElement(p)
             tr.addElement(tc)
+            tc = TableCell(stylename="THstyle")
+            tr.addElement(tc)
+
         if ranks:
             rankinfo = ranks[testcase.split('/')[-1]]
             #tc = TableCell(valuetype="float", value=str("%.3f"%float(rankinfo[0])))
