@@ -64,6 +64,11 @@ fromtype=`echo $ifile|awk -F "." '{print $NF}'`
 totype=`echo $ofile|awk -F "." '{print $NF}'`
 apptype=`echo $rtripapp|cut -b -2`
 
+if [ -e .~lock.auxttt.xx.$totype# ]
+then
+    rm .~lock.auxttt.xx.$totype#
+fi
+
 let canconvert=canconvert$rtripapp
 if [ $canconvert -eq 1 ] 
 then
