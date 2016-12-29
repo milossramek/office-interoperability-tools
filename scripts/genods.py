@@ -356,6 +356,7 @@ def getRsltTable(testType):
                 tc.addElement(p)
             tc = TableCell(stylename="THstyle")
 
+            sumall = sum(valToGrade(values[testcase][a][1:]))
             if grades == [7,7,7,7]:
                 p = P(stylename=tablecontents,text=unicode("timeout",PWENC))
                 if testType == "roundtrip":
@@ -364,8 +365,28 @@ def getRsltTable(testType):
                         p = P(stylename=tablecontents,text=unicode("corrupted",PWENC))
             elif grades == [6,6,6,6]:
                 p = P(stylename=tablecontents,text=unicode("empty",PWENC))
+            elif sumall <= 8:
+                if testType == "print":
+                    goodDocuments.append(testcase)
+                    p = P(stylename=tablecontents,text=unicode("good import",PWENC))
+                elif testType == "roundtrip":
+                    if testcase in goodDocuments:
+                        p = P(stylename=tablecontents,text=unicode("good import, good export",PWENC))
+                    elif testcase in badDocuments:
+                        p = P(stylename=tablecontents,text=unicode("bad import, good export",PWENC))
+            elif sumall <= 20:
+                if testType == "roundtrip":
+                    if testcase in goodDocuments:
+                        p = P(stylename=tablecontents,text=unicode("good import, bad export",PWENC))
+                        badDocuments.append(testcase)
+                    elif testcase in badDocuments:
+                        p = P(stylename=tablecontents,text=unicode("bad import, bad export",PWENC))
+                elif testType == "print":
+                    badDocuments.append(testcase)
+                    p = P(stylename=tablecontents,text=unicode("bad import",PWENC))
             else:
                 p = P(stylename=tablecontents,text=unicode("",PWENC))
+
             tc.addElement(p)
             tr.addElement(tc)
             tc = TableCell(stylename="THstyle")
@@ -533,6 +554,8 @@ rankCellStyle = Style(name="rankCellStyle",family="table-cell", parentstylename=
 rankCellStyle.addElement(ParagraphProperties(textalign="center"))
 textdoc.styles.addElement(rankCellStyle)
 
+goodDocuments = []
+badDocuments = []
 table = getRsltTable("print")
 textdoc.spreadsheet.addElement(table)
 table = getRsltTable("roundtrip")
