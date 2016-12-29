@@ -9,6 +9,7 @@
 import sys, os, getopt 
 import csv
 import numpy as np
+import pickle
 
 try:
     import ipdb
@@ -359,12 +360,14 @@ def getRsltTable(testType):
             sumall = sum(valToGrade(values[testcase][a][1:]))
             if grades == [7,7,7,7]:
                 p = P(stylename=tablecontents,text=unicode("timeout",PWENC))
+                badDocuments.append(testcase)
                 if testType == "roundtrip":
                     gradesPrint = valToGrade(values[testcase][a.replace(testType, 'print')][1:])
                     if gradesPrint != [7,7,7,7]:
                         p = P(stylename=tablecontents,text=unicode("corrupted",PWENC))
             elif grades == [6,6,6,6]:
                 p = P(stylename=tablecontents,text=unicode("empty",PWENC))
+                badDocuments.append(testcase)
             elif sumall <= 8:
                 if testType == "print":
                     goodDocuments.append(testcase)
@@ -556,6 +559,15 @@ textdoc.styles.addElement(rankCellStyle)
 
 goodDocuments = []
 badDocuments = []
+badDocumentsPickle = []
+
+try:
+    with open('badDocuments.pickle', 'rb') as handle:
+        badDocumentsPickle = pickle.load(handle)
+except:
+    pass
+print(badDocumentsPickle)
+
 table = getRsltTable("print")
 textdoc.spreadsheet.addElement(table)
 table = getRsltTable("roundtrip")
@@ -563,4 +575,20 @@ textdoc.spreadsheet.addElement(table)
 #table = getRsltTable("all", False)
 #textdoc.spreadsheet.addElement(table)
 textdoc.save(ofname)
-    
+
+try:
+    os.mkdir('bad')
+except:
+    pass
+
+for item in badDocuments:
+    try:
+        orig = item.split("/")[0]
+        name = item.split("/")[1]
+        os.rename(item , item.replace(orig, 'bad'))
+        badDocumentsPickle.append(name)
+    except OSError:
+        pass
+
+with open('badDocuments.pickle', 'wb') as handle:
+    pickle.dump(badDocumentsPickle, handle)
