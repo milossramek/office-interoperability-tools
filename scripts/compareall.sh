@@ -1,8 +1,6 @@
 #!/bin/bash
 #set -o xtrace #be verbose
 
-. config.sh
-
 dpi=400		#dpi to render pdfs
 threshold=166	#threshold to identify foreground
 

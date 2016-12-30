@@ -5,7 +5,6 @@
 function usage
 {
 	echo "$0: Extract test results from the pair view files " 1>&2
-	echo "	Configuration of to-be-tested cases specified in 'config.sh'" 1>&2
 	echo "Usage: $0 [switches] " 1>&2
 	echo "Switches:" 1>&2
 	echo "    -o ................ file to saved output (views and information) {default: $outname}" 1>&2 
@@ -35,7 +34,6 @@ function getvalues
 }
 
 ########################################
-. config.sh
 while [ $# -gt 0 ]
 do
 	case "$1" in
