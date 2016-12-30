@@ -55,61 +55,56 @@ do
 done
 
 #The first header line
-line="File name,"
 for a in $rtripapps; do
+    echo "Processing $a" 1>&2
+    line="File name,"
     folder=$a'-'$(ver$a)
-    line="$line$folder roundtrip,,,,,$folder print,,,,," ; done
-echo $line
-#The second header line
-line=","
-for a in $rtripapps; do line="$line $header, $header," ; done
-echo $line
+    line="$line$folder roundtrip,,,,,$folder print,,,,,"
+    echo $line > $folder/all.csv
 
-# get names of pdf files from
-for dir in $sourcedir $sourceapp; do
-	filenames=""
-	cd $dir
-	for fmt in $oformat; do
-		aux=`find . -name \*.$fmt -printf '%P\n'`
-		filenames="$aux $filenames"
-	done
-	cd ..
+    # get names of pdf files from
+    for dir in $sourcedir $sourceapp; do
+        filenames=""
+        cd $dir
+        for fmt in $oformat; do
+            aux=`find . -name \*.$fmt -printf '%P\n'`
+            filenames="$aux $filenames"
+        done
+        cd ..
 
-	#get one file with results go get the header
-	aux=`echo $filenames|cut -d " " -f 1`
-	rsltfile=`basename $aux .$fmt`
-	rsltdir=`dirname $aux`
-	rsltapp=`echo $rtripapps|cut -d " " -f 1`
-	getheader $rsltapp/$rsltdir/$rsltfile.$fmt-pair-l.pdf
-	header=$retval
+        #get one file with results go get the header
+        aux=`echo $filenames|cut -d " " -f 1`
+        rsltfile=`basename $aux .$fmt`
+        rsltdir=`dirname $aux`
+        rsltapp=`echo $rtripapps|cut -d " " -f 1`
+        getheader $rsltapp/$rsltdir/$rsltfile.$fmt-pair-l.pdf
+        header=$retval
 
-	for f in $filenames;
-	do
-		#refpdfn=`basename $f .$format`	#source document without suffix
-		refpdfn=`basename $f`	#source document without suffix
-		ddd=`dirname $f`
-		subdir=${ddd/\.\//}	# get nice subdir path
-		#line="$subdir/$refpdfn"	# first line item - file name without suffix
-		if [ $ddd == "." ]; then
-			line="$dir/$refpdfn"	# first line item - file name without suffix
-		else
-			line="$dir/$subdir/$refpdfn"	# first line item - file name without suffix
-		fi
-		echo "Processing $line" 1>&2
-		for app in $rtripapps;
-		do
-            folder=$app'-'$(ver$app)
-			#the roundtrip file
-			rsltpdf=$folder/$subdir/$refpdfn-pair-l.pdf
-			#echo $rsltpdf
-			getvalues $rsltpdf
-			line="$line, $retval"
-			#the printed file
-			rsltpdf=$folder/$subdir/$refpdfn.$folder-pair-l.pdf
-			#echo $rsltpdf
-			getvalues $rsltpdf
-			line="$line, $retval"
-		done
-		echo $line
-	done
+        for f in $filenames;
+        do
+            #refpdfn=`basename $f .$format`	#source document without suffix
+            refpdfn=`basename $f`	#source document without suffix
+            ddd=`dirname $f`
+            subdir=${ddd/\.\//}	# get nice subdir path
+            #line="$subdir/$refpdfn"	# first line item - file name without suffix
+            if [ $ddd == "." ]; then
+	            line="$dir/$refpdfn"	# first line item - file name without suffix
+            else
+	            line="$dir/$subdir/$refpdfn"	# first line item - file name without suffix
+            fi
+
+            #the roundtrip file
+            rsltpdf=$folder/$subdir/$refpdfn-pair-l.pdf
+            #echo $rsltpdf
+            getvalues $rsltpdf
+            line="$line, $retval"
+            #the printed file
+            rsltpdf=$folder/$subdir/$refpdfn.$folder-pair-l.pdf
+            #echo $rsltpdf
+            getvalues $rsltpdf
+            line="$line, $retval"
+
+            echo $line >> $folder/all.csv
+        done
+    done
 done

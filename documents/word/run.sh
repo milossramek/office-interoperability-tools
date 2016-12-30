@@ -23,5 +23,5 @@ export sourceapp="MSWINE"	# MS Office running under Wine on Linux
 ../../scripts/convall.sh
 ../../scripts/printall.sh
 ../../scripts/compareall.sh
-../../scripts/gencsv.sh > all.csv
+../../scripts/gencsv.sh
 ../../scripts/genods.py -i all.csv -o rslt.ods
