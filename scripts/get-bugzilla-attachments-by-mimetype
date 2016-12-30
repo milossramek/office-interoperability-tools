@@ -32,7 +32,7 @@ import os, os.path
 import stat
 import sys
 import threading
-import pickle
+import signal
 try:
     import queue
 except:
@@ -88,10 +88,8 @@ def get_from_bug_url_via_xml(url, mimetype, prefix, suffix):
                     print('deleted attachment, skipping')
                     continue
 
-                name = prefix + id + '-' + str(attachmentid) + '.' + suffix
-                download = folder + '/' + name
-                print(download)
-                if os.path.isfile(download) or name in downloadedFiles:
+                download = folder + '/' +prefix + id + '-' + str(attachmentid) + '.' + suffix
+                if os.path.isfile(download):
                     print("assuming " + download + " is up to date")
                     continue
 
@@ -102,7 +100,6 @@ def get_from_bug_url_via_xml(url, mimetype, prefix, suffix):
                         print("assuming FDO " + fdodownload + " is up to date")
                         continue
                 index += 1
-                downloadedFiles.append(download)
                 print('downloading as ' + download)
                 tmpfile = download + ".tmp"
                 f = open(tmpfile, 'wb')
@@ -130,9 +127,8 @@ def get_novell_bug_via_xml(url, mimetype, prefix, suffix):
 
         attachmentid += 1
 
-        name = prefix + id + '-' + str(attachmentid) + '.' + suffix
-        download = folder + '/' + name
-        if os.path.isfile(download) or name in downloadedFiles:
+        download = folder + '/' + prefix + id + '-' + str(attachmentid) + '.' + suffix
+        if os.path.isfile(download):
             print("assuming " + download + " is up to date")
             continue
 
@@ -154,7 +150,6 @@ def get_novell_bug_via_xml(url, mimetype, prefix, suffix):
             continue
 
         index += 1
-        downloadedFiles.append(download)
         print('downloading as ' + download)
         tmpfile = download + ".tmp"
         f = open(tmpfile, 'wb')
@@ -346,15 +341,13 @@ def get_launchpad_bugs(prefix):
                     except:
                         pass
 
-                name = prefix + id + '-' + str(attachmentid) + '.' + suffix
-                download = folder + '/' + name
+                download = folder + '/' + prefix + id + '-' + str(attachmentid) + '.' + suffix
 
-                if os.path.isfile(download) or name in downloadedFiles:
+                if os.path.isfile(download):
                     print("assuming " + id + " is up to date")
                     break
 
                 index += 1
-                downloadedFiles.append(download)
                 print('mimetype is ' + handle.content_type + ' downloading as ' + download)
 
                 tmpfile = download + ".tmp"
@@ -606,30 +599,18 @@ def generate_multi_threading():
         jobs.join()
         print("DONE with bugtracker " + prefix)
 
-max_threads = 1 # Number of threads to create, (1 = without multi-threading)
+max_threads = 20 # Number of threads to create, (1 = without multi-threading)
 index = 0
-nDocuments = 10
+nDocuments = 100
 jobs = queue.Queue()
-downloadedFiles = []
 
 if len(sys.argv) > 1:
-    name = sys.argv[1]
-    if name == 'word':
+    if sys.argv[1] == 'word':
         folder = '../documents/word/orig'
         mimetypes = word
-        try:
-            with open('../documents/word/badDocuments.pickle', 'rb') as handle:
-                downloadedFiles = pickle.load(handle)
-        except:
-            pass
-    elif name == 'powerpoint':
+    elif sys.argv[1] == 'powerpoint':
         folder = '../documents/powerpoint/orig'
         mimetypes = powerpoint
-        try:
-            with open('../documents/powerpoint/badDocuments.pickle', 'rb') as f:
-                downloadedFiles = pickle.load(f)
-        except:
-            pass
     else:
         print("First argument needs to be \'word\' or \'powerpoint\'")
         sys.exit()
@@ -644,6 +625,7 @@ if len(sys.argv) > 1:
 else:
     print("At least one argument is needed")
     sys.exit()
+
 
 generate_multi_threading()
 
