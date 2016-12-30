@@ -1,6 +1,8 @@
 #!/bin/bash
 #set -o xtrace #be verbose
 
+. $FTPATH/officeconf.sh
+
 dpi=400		#dpi to render pdfs
 threshold=166	#threshold to identify foreground
 
@@ -101,7 +103,8 @@ else
 	for app in `echo $rtripapps`; do
   		echo Processing $app
 		#for pdfdoc in $pdfs; do cmp `basename $pdfdoc` $app; done
+        folder=$app'-'$(ver$app)
 		count=0
-		for pdfdoc in $pdfs; do ((count++)); cmp $pdfdoc $app $count; done
+		for pdfdoc in $pdfs; do ((count++)); cmp $pdfdoc $folder $count; done
 	done
 fi

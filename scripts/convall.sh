@@ -10,12 +10,13 @@ for rtapp in `echo $rtripapps`; do
 	if [ $canconvert -eq 1 ] 
 	then
 		echo Processing $rtapp
+        folder=$rtapp'-'$(ver$rtapp)
 		#create directory if it does not exit
-		if [ ! -d "$rtapp" ]; then
-			mkdir $rtapp
-			rm -f `find $rtapp -name \*.pdf`
+		if [ ! -d $folder ]; then
+			mkdir $folder
+			rm -f `find $folder -name \*.pdf`
 			for fmt in $iformat; do
-				rm -f `find $rtapp -name \*.$fmt`
+				rm -f `find $folder -name \*.$fmt`
 			done
 		fi
 		for ifmt in $iformat; do
@@ -24,7 +25,7 @@ for rtapp in `echo $rtripapps`; do
 			for ifile in $files; do
 				for ofmt in $oformat; do
 					ofile=${ifile/$ifmt/$ofmt}
-					ofile=${ofile/$sourcedir/$rtapp}
+					ofile=${ofile/$sourcedir/$folder}
 					# convert to the same file type
 					# input: orig/bullets.doc
 					# output: LO52/bullets.doc

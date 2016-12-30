@@ -76,6 +76,11 @@ then
 
 	for a in $sourceapp $rtripapps; do
 		echo Printing in $a
+        apptype=`echo $a|cut -b -2`
+	    if [ $apptype == "LO" -o $apptype == "AO" -o $apptype == "OO" -o $apptype == "BB" ]
+	    then
+            a=$a'-'$(ver$a)
+        fi
 		for ofmt in $oformat; do
 			for i in `find $a -name \*.$ofmt`; do
 				(

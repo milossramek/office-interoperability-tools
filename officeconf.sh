@@ -237,6 +237,7 @@ then
 	canconvertLO52=1	# we can convert from source type to target types
 	canprintLO52=1		# we can print to pdf
 	#usage: convLO52 docx file.odf #converts the given file to docx
+    verLO52() { $LO52PROG --version | awk '{print $3;}' | xargs echo -n; }
 	convLO52() { $LO52PROG --headless --convert-to $1 $2 &> /dev/null; }
 	sourceLO52() { echo "odt"; }
 	targetLO52() { echo "rtf docx doc"; }
@@ -273,6 +274,7 @@ then
 	canconvertLOMASTER=1	# we can convert from source type to target types
 	canprintLOMASTER=1		# we can print to pdf
 	#usage: convLO5MLIN docx file.odf #converts the given file to docx
+    verLOMASTER() { $LOMASTERPROG --version | awk '{print $3;}' | xargs echo -n; }
 	convLOMASTER() { $LOMASTERPROG --headless --convert-to $1 $2 &> /dev/null; }
 	sourceLOMASTER() { echo "odt"; }
 	targetLOMASTER() { echo "rtf docx doc"; }

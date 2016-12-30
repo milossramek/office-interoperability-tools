@@ -1,6 +1,7 @@
 #! /bin/bash
 #set -o xtrace #be verbose
 
+. $FTPATH/officeconf.sh
 
 function usage
 {
@@ -55,7 +56,9 @@ done
 
 #The first header line
 line="File name,"
-for a in $rtripapps; do line="$line$a roundtrip,,,,,$a print,,,,," ; done
+for a in $rtripapps; do
+    folder=$a'-'$(ver$a)
+    line="$line$folder roundtrip,,,,,$folder print,,,,," ; done
 echo $line
 #The second header line
 line=","
@@ -95,13 +98,14 @@ for dir in $sourcedir $sourceapp; do
 		echo "Processing $line" 1>&2
 		for app in $rtripapps;
 		do
+            folder=$app'-'$(ver$app)
 			#the roundtrip file
-			rsltpdf=$app/$subdir/$refpdfn-pair-l.pdf
+			rsltpdf=$folder/$subdir/$refpdfn-pair-l.pdf
 			#echo $rsltpdf
 			getvalues $rsltpdf
 			line="$line, $retval"
 			#the printed file
-			rsltpdf=$app/$subdir/$refpdfn.$app-pair-l.pdf
+			rsltpdf=$folder/$subdir/$refpdfn.$folder-pair-l.pdf
 			#echo $rsltpdf
 			getvalues $rsltpdf
 			line="$line, $retval"
