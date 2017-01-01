@@ -214,7 +214,7 @@ then
 	canconvertLO50=1	# we can convert from source type to target types
 	canprintLO50=1		# we can print to pdf
 	#usage: convLO50 docx file.odf #converts the given file to docx
-    verLO50() { $LOMASTERPROG --version | awk '{print $3;}' | xargs
+    verLO50() { $LOMASTERPROG --version | awk '{print $3;}' | xargs echo -n; }
 	convLO50() { $LO50PROG --headless --convert-to $1 $2 &> /dev/null; }
 	sourceLO50() { echo "odt"; }
 	targetLO50() { echo "rtf docx doc"; }
