@@ -289,6 +289,23 @@ def getRsltTable(testType):
             tc.addElement(p)
 
     for testcase in values.keys():
+
+        #identify regressions and progressions
+        progreg='x'
+        #mgrades = [sum(valToGrade(values[testcase][a][1:])) for a in targetAppsSel] 
+        agrades = np.array([valToGrade(values[testcase][a][1:]) for a in targetAppsSel])
+        lastgrade=agrades[-1]
+        maxgrade=agrades.max(axis=0)
+        mingrade=agrades.min(axis=0)
+        #ipdb.set_trace()
+        if (lastgrade>mingrade).any():  #We have regression
+            progreg=str(sum(lastgrade-mingrade))
+        else:
+            progreg=str(sum(lastgrade-maxgrade))
+
+        if int(progreg) >= 0:
+            continue
+
         #testcase=testcase.split('/')[1]
         tr = TableRow()
         table.addElement(tr)
@@ -299,18 +316,7 @@ def getRsltTable(testType):
         link = A(type="simple",href="%s%s"%(lpath,testcase), text=testcase)
         p.addElement(link)
         tc.addElement(p)
-        #identify regressions and progressions
-        progreg='x'
-        #mgrades = [sum(valToGrade(values[testcase][a][1:])) for a in targetAppsSel] 
-        agrades = np.array([valToGrade(values[testcase][a][1:]) for a in targetAppsSel])
-        lastgrade=agrades[-1]
-        maxgrade=agrades.max(axis=0)
-        mingrade=agrades.min(axis=0)
-        #ipdb.set_trace()
-        if (lastgrade>mingrade).any():  #We have regression
-            progreg=str((lastgrade-mingrade).max())
-        else:
-            progreg=str((lastgrade-maxgrade).min())
+
         tc = TableCell(valuetype="float", value=progreg)
         tr.addElement(tc)
         #p = P(stylename=tablecontents,text=unicode(progreg,PWENC))
