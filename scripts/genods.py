@@ -19,15 +19,17 @@ from odf.style import Style, TextProperties, ParagraphProperties, TableColumnPro
 from odf.text import P, A
 from odf.table import Table, TableColumn, TableRow, TableCell
 from odf.office import Annotation
+from collections import defaultdict
 
 PWENC = "utf-8"
 
 progdesc='Derive some results from pdf tests'
 
 def usage(desc):
-    print sys.argv[0]+':',  desc, ofname, ifname,rfname, tm1roundtrip, tm1print
+    print sys.argv[0]+':',  desc, ofname, ifname, ifname2, rfname, tm1roundtrip, tm1print
     print "Usage: ", sys.argv[0], "[options]"
-    print "\t-i infile.csv ... ..... report {default: "+ifname+"}"
+    print "\t-1 infile.csv ... ..... report {default: "+ifname+"}"
+    print "\t-2 infile.csv ... ..... report {default: "+ifname2+"}"
     print "\t-o outfile.csv ........ report {default: "+ofname+"}"
     print "\t-r rankfile.csv ....... document ranking"
     print "\t-t tagMax1-roundtrip.csv . document tags"
@@ -39,9 +41,9 @@ def usage(desc):
     print "\t-h .................... this usage"
 
 def parsecmd(desc):
-    global verbose, useapps, ofname, ifname, lpath, rfname, showalllinks, tm1print, tm1roundtrip
+    global verbose, useapps, ofname, ifname, ifname2, lpath, rfname, showalllinks, tm1print, tm1roundtrip
     try:
-        opts, Names = getopt.getopt(sys.argv[1:], "hvli:o:a:p:r:t:n:", ["help", "verbose"])
+        opts, Names = getopt.getopt(sys.argv[1:], "hvl:o:a:p:r:1:2:t:n:", ["help", "verbose"])
     except getopt.GetoptError as err:
         # print help information and exit:
         print str(err) # will print something like "option -a not recognized"
@@ -55,8 +57,10 @@ def parsecmd(desc):
             sys.exit()
         elif o in ("-o"):
             ofname = a
-        elif o in ("-i"):
+        elif o in ("-1"):
             ifname = a
+        elif o in ("-2"):
+            ifname2 = a
         elif o in ("-t"):
              tm1roundtrip= a
         elif o in ("-n"):
@@ -430,6 +434,7 @@ useapps=None
 showalllinks=True
 
 ifname= 'all.csv'
+ifname2= 'all.csv'
 ofname= 'rslt.ods'
 rfname= None
 tm1roundtrip= None
@@ -455,6 +460,17 @@ lpath = '../'
 parsecmd(progdesc)
 if lpath[-1] != '/': lpath = lpath+'/'
 targetApps, testLabels, values = loadCSV(ifname)
+targetApps2, testLabels2, values2 = loadCSV(ifname2)
+targetApps = targetApps + targetApps2
+testLabels = testLabels + testLabels2
+
+result = defaultdict(dict)
+for d in values, values2:
+    for k, v in d.iteritems():
+        result[k].update(v)
+
+values = result
+
 ranks= None
 if rfname:
     ranks=loadRanks(rfname)
