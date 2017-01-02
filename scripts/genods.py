@@ -290,13 +290,18 @@ def getRsltTable(testType):
 
     for testcase in values.keys():
 
+        try:
+            agrades = np.array([valToGrade(values[testcase][a][1:]) for a in targetAppsSel])
+            lastgrade=agrades[-1]
+            maxgrade=agrades.max(axis=0)
+            mingrade=agrades.min(axis=0)
+        except KeyError:
+            # In case a testcase is in the first csv but not in the second one
+            continue
+
         #identify regressions and progressions
         progreg='x'
-        #mgrades = [sum(valToGrade(values[testcase][a][1:])) for a in targetAppsSel] 
-        agrades = np.array([valToGrade(values[testcase][a][1:]) for a in targetAppsSel])
-        lastgrade=agrades[-1]
-        maxgrade=agrades.max(axis=0)
-        mingrade=agrades.min(axis=0)
+
         #ipdb.set_trace()
         if (lastgrade>mingrade).any():  #We have regression
             progreg=str(sum(lastgrade-mingrade))
