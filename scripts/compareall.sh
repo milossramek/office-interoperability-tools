@@ -20,36 +20,32 @@ function cmp ()
 {
 	#echo 1 $1
 	refpdf=`basename $1` 	#source document with suffix
+    refpdf=${refpdf//$2.}   #Remove $app from file name
 	refpdfn=`basename $refpdf .pdf`	#source document without suffix
-	#echo refpdf $refpdf
 	ddd=`dirname $1`
 	subdir=${ddd/\.\//}	# nice subdir path
-	#echo subdir $subdir
 	spdf=$sourceapp/$subdir/$refpdf	#source document with nice path
-	#echo spdf $spdf
-	tpdf=$2/$subdir/$refpdfn	#target document with nice path without suffix
-	#echo tpdf $tpdf
+	tpdf=$4/$subdir/$refpdfn	#target document with nice path without suffix
 	
-	#if [ ! -e "${tpdf}-pair-l.pdf" ];
 	if [ ! -e "${tpdf}-pair-l.pdf" ] || [ "${tpdf}-pair-l.pdf" -ot "$spdf" ];
 	then
 		echo $3 - Creating pairs for  $tpdf
-		time timeout 120s  docompare.py -t $threshold -d $dpi -a -o $tpdf-pair $spdf $tpdf.pdf 2>/dev/null
+		time timeout 120s  docompare.py -t $threshold -d $dpi -a -o $tpdf-pair $spdf $tpdf.pdf
 
 	    if [ ! -e "${tpdf}-pair-l.pdf" ] || [ "${tpdf}-pair-l.pdf" -ot "$spdf" ];
 	    then
             rm /tmp/*.tif
-        else
-	        if [ ! -e "${tpdf}.$2-pair-l.pdf" ] || [ "${tpdf}.$2-pair-l.pdf" -ot "$spdf" ];
-	        then
-		        echo $3 - Creating pairs for  $tpdf.$2
-		        time timeout 120s docompare.py -t $threshold -d $dpi -a -o $tpdf.$2-pair $spdf $tpdf.$2.pdf 2>/dev/null
+        fi
 
-                if [ ! -e "${tpdf}.$2-pair-l.pdf" ] || [ "${tpdf}.$2-pair-l.pdf" -ot "$spdf" ];
-	            then
-                    rm /tmp/*.tif
-                fi
-	        fi
+        if [ ! -e "${tpdf}.$2-pair-l.pdf" ] || [ "${tpdf}.$2-pair-l.pdf" -ot "$spdf" ];
+        then
+	        echo $3 - Creating pairs for  $tpdf.$2
+	        time timeout 120s docompare.py -t $threshold -d $dpi -a -o $tpdf.$2-pair $spdf $tpdf.$2.pdf
+
+            if [ ! -e "${tpdf}.$2-pair-l.pdf" ] || [ "${tpdf}.$2-pair-l.pdf" -ot "$spdf" ];
+            then
+                rm /tmp/*.tif
+            fi
         fi
 	fi
 }
@@ -105,6 +101,6 @@ else
         pdfs=`find . -name \*.pdf|grep -v pair|sort -n -k 1.7,1.9`
         cd ..
 		count=0
-		for pdfdoc in $pdfs; do ((count++)); cmp $pdfdoc $folder $count; done
+		for pdfdoc in $pdfs; do ((count++)); cmp $pdfdoc $app $count $folder; done
 	done
 fi
