@@ -30,7 +30,7 @@ function cmp ()
 	if [ ! -e "${tpdf}-pair-l.pdf" ] || [ "${tpdf}-pair-l.pdf" -ot "$spdf" ];
 	then
 		echo $3 - Creating pairs for  $tpdf
-		time timeout 120s  docompare.py -t $threshold -d $dpi -a -o $tpdf-pair $spdf $tpdf.pdf
+		time timeout 120s  docompare.py -t $threshold -d $dpi -a -o $tpdf-pair $spdf $tpdf.pdf 2>/dev/null
 
 	    if [ ! -e "${tpdf}-pair-l.pdf" ] || [ "${tpdf}-pair-l.pdf" -ot "$spdf" ];
 	    then
@@ -40,7 +40,7 @@ function cmp ()
         if [ ! -e "${tpdf}.$2-pair-l.pdf" ] || [ "${tpdf}.$2-pair-l.pdf" -ot "$spdf" ];
         then
 	        echo $3 - Creating pairs for  $tpdf.$2
-	        time timeout 120s docompare.py -t $threshold -d $dpi -a -o $tpdf.$2-pair $spdf $tpdf.$2.pdf
+	        time timeout 120s docompare.py -t $threshold -d $dpi -a -o $tpdf.$2-pair $spdf $tpdf.$2.pdf 2>/dev/null
 
             if [ ! -e "${tpdf}.$2-pair-l.pdf" ] || [ "${tpdf}.$2-pair-l.pdf" -ot "$spdf" ];
             then
