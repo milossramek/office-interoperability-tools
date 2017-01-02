@@ -308,7 +308,8 @@ def getRsltTable(testType):
         else:
             progreg=str(sum(lastgrade-maxgrade))
 
-        if int(progreg) >= 0:
+        if int(progreg) >= 0 and not np.array_equal(agrades[0], [7,7,7,7]) \
+                and not np.array_equal(agrades[0], [6,6,6,6]):
             continue
 
         #testcase=testcase.split('/')[1]
