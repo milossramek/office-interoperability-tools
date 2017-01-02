@@ -79,11 +79,8 @@ while true ; do
 done
 shift $(expr $OPTIND - 1 )
 
-#get list of source pdfs. We assume the same structure and files in the target directories
 # file names: bullets.docx.pdf
-cd $sourceapp
-pdfs=`find . -name \*.pdf|grep -v pair|sort -n -k 1.7,1.9`
-cd ..
+
 
 if [[ $# -gt 0 ]] 
 then
@@ -104,6 +101,9 @@ else
   		echo Processing $app
 		#for pdfdoc in $pdfs; do cmp `basename $pdfdoc` $app; done
         folder=$app'-'$(ver$app)
+        cd $folder
+        pdfs=`find . -name \*.pdf|grep -v pair|sort -n -k 1.7,1.9`
+        cd ..
 		count=0
 		for pdfdoc in $pdfs; do ((count++)); cmp $pdfdoc $folder $count; done
 	done
