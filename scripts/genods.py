@@ -357,9 +357,10 @@ def getRsltTable(testType):
             filename=testcase.split("/",1)[-1]  # get subdirectories, too
             
             if ttype=="roundtrip":
-                pdfpath=lpath+app+"/"+filename+"-pair"
+                pdfpath=app+"/"+filename+"-pair"
             else:
-                pdfpath=lpath+app+"/"+filename+"."+subapp+"-pair"
+                pdfpath=app+"/"+filename+"."+subapp+"-pair"
+            pdfPathInDoc = lpath + pdfpath
             for (grade, viewType) in zip(reversed(grades), viewTypes):   # we do not show the PPOI value
                 if max(grades) > 1:
                     tc = TableCell(valuetype="float", value=str(grade), stylename='C'+str(int(grade))+'style')
@@ -369,10 +370,11 @@ def getRsltTable(testType):
                 tc = TableCell(stylename="THstyle")
                 tr.addElement(tc)
                 p = P(stylename=tablecontents,text=unicode("",PWENC))
-                link = A(type="simple",href=pdfpath+"-%s.pdf"%viewType, text=">")
-                if showalllinks or a==targetAppsSel[-1]:
-                    p.addElement(link)
-                tc.addElement(p)
+                if os.path.exists(pdfpath + '-' + viewType + '.pdf'):
+                    link = A(type="simple",href=pdfPathInDoc+"-%s.pdf"%viewType, text=">")
+                    if showalllinks or a==targetAppsSel[-1]:
+                        p.addElement(link)
+                    tc.addElement(p)
             tc = TableCell(stylename="THstyle")
 
             sumall = sum(valToGrade(values[testcase][a][1:]))
