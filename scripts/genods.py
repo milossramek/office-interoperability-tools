@@ -350,13 +350,16 @@ def getRsltTable(testType):
             #print grades
             viewTypes=['s','p','l','z']
             app, ttype = a.split()
+            subapp = app.split('-')[0]
+            
             #create pdf path
             #ipdb.set_trace()
             filename=testcase.split("/",1)[-1]  # get subdirectories, too
+            
             if ttype=="roundtrip":
                 pdfpath=lpath+app+"/"+filename+"-pair"
             else:
-                pdfpath=lpath+app+"/"+filename+"."+app+"-pair"
+                pdfpath=lpath+app+"/"+filename+"."+subapp+"-pair"
             for (grade, viewType) in zip(reversed(grades), viewTypes):   # we do not show the PPOI value
                 if max(grades) > 1:
                     tc = TableCell(valuetype="float", value=str(grade), stylename='C'+str(int(grade))+'style')
