@@ -76,11 +76,9 @@ function startOOoServer()
 # kill OOo or AOO server, in case we have it
 function killOOoServer()
 {
-	local apptype=`echo $1|cut -b -2`
-	local appversion=`echo $1|cut -b 3-4`
-	if [ $apptype == "OO" -o $apptype == "AO" ]
-	then
-		killall soffice 2>/dev/null
+	if pgrep soffice.bin > /dev/null; then
+		echo "Killing soffice.bin"
+		ps -ef | grep soffice.bin | grep -v grep | awk '{print $2}' | xargs kill
 	fi
 }
 
@@ -88,11 +86,16 @@ function killOOoServer()
 function checkLO ()
 {
 	SERVICE=soffice.bin
-	ps -a | grep -v grep | grep $SERVICE > /dev/null
+	ps -ef | grep $SERVICE | grep -v grep > /dev/null
 	result=$?
 	if [ "${result}" -eq "0" ] ; then
-    		echo "$SERVICE is running. Stop it first"
-    		exit 1
+		echo "$SERVICE is running. Stop it first. Would you like to kill it?: (y/n)"
+		read x
+		if echo "$x" | grep -iq "^y" ;then
+		    killOOoServer
+		else
+		        exit 1
+		fi
 	fi
 }
 
@@ -198,6 +201,7 @@ then
 	canconvertLO44=1	# we can convert from source type to target types
 	canprintLO44=1		# we can print to pdf
 	#usage: convLO44 docx file.odf #converts the given file to docx
+    verLO44() { $LOMASTERPROG --version | awk '{print $3;}' | xargs echo -n; }
 	convLO44() { $LO44PROG --headless --convert-to $1 $2 &> /dev/null; }
 	sourceLO44() { echo "odt"; }
 	targetLO44() { echo "rtf docx doc"; }
@@ -210,6 +214,7 @@ then
 	canconvertLO50=1	# we can convert from source type to target types
 	canprintLO50=1		# we can print to pdf
 	#usage: convLO50 docx file.odf #converts the given file to docx
+    verLO50() { $LOMASTERPROG --version | awk '{print $3;}' | xargs echo -n; }
 	convLO50() { $LO50PROG --headless --convert-to $1 $2 &> /dev/null; }
 	sourceLO50() { echo "odt"; }
 	targetLO50() { echo "rtf docx doc"; }
@@ -234,6 +239,7 @@ then
 	canconvertLO52=1	# we can convert from source type to target types
 	canprintLO52=1		# we can print to pdf
 	#usage: convLO52 docx file.odf #converts the given file to docx
+    verLO52() { $LO52PROG --version | awk '{print $3;}' | xargs echo -n; }
 	convLO52() { $LO52PROG --headless --convert-to $1 $2 &> /dev/null; }
 	sourceLO52() { echo "odt"; }
 	targetLO52() { echo "rtf docx doc"; }
@@ -265,40 +271,17 @@ then
 	printLO52WIN() { $LO52WINPROG --headless --convert-to pdf $1 &> /dev/null; }
 fi
 
-if [ -x "$LO5MLINPROG" ]
+if [ -x "$LOMASTERPROG" ]
 then
-	canconvertLO5MLIN=1	# we can convert from source type to target types
-	canprintLO5MLIN=1		# we can print to pdf
+	canconvertLOMASTER=1	# we can convert from source type to target types
+	canprintLOMASTER=1		# we can print to pdf
 	#usage: convLO5MLIN docx file.odf #converts the given file to docx
-	convLO5MLIN() { $LO5MLINPROG --headless --convert-to $1 $2 &> /dev/null; }
-	sourceLO5MLIN() { echo "odt"; }
-	targetLO5MLIN() { echo "rtf docx doc"; }
-	#usage: printLO5MLIN pdf file.rtf #prints the given file to pdf
-	printLO5MLIN() { $LO5MLINPROG --headless --convert-to pdf $1 &> /dev/null; }
-fi
-
-if [ -x "$LO5M_CLAYOUTLINPROG" ]
-then
-	canconvertLO5M_CLAYOUTLIN=1	# we can convert from source type to target types
-	canprintLO5M_CLAYOUTLIN=1		# we can print to pdf
-	#usage: convLO5M_CLAYOUTLIN docx file.odf #converts the given file to docx
-	convLO5M_CLAYOUTLIN() { export SAL_USE_COMMON_LAYOUT=1; $LO5M_CLAYOUTLINPROG --headless --convert-to $1 $2 &> /dev/null; }
-	sourceLO5M_CLAYOUTLIN() { echo "odt"; }
-	targetLO5M_CLAYOUTLIN() { echo "rtf docx doc"; }
-	#usage: printLO5M_CLAYOUTLIN pdf file.rtf #prints the given file to pdf
-	printLO5M_CLAYOUTLIN() { export SAL_USE_COMMON_LAYOUT=1; $LO5M_CLAYOUTLINPROG --headless --convert-to pdf $1 &> /dev/null; }
-fi
-
-if [ -x "$LO5M_NOCLAYOUTLINPROG" ]
-then
-	canconvertLO5M_NOCLAYOUTLIN=1	# we can convert from source type to target types
-	canprintLO5M_NOCLAYOUTLIN=1		# we can print to pdf
-	#usage: convLO5M_NOCLAYOUTLIN docx file.odf #converts the given file to docx
-	convLO5M_NOCLAYOUTLIN() { unset SAL_USE_COMMON_LAYOUT; $LO5M_NOCLAYOUTLINPROG --headless --convert-to $1 $2 &> /dev/null; }
-	sourceLO5M_NOCLAYOUTLIN() { echo "odt"; }
-	targetLO5M_NOCLAYOUTLIN() { echo "rtf docx doc"; }
-	#usage: printLO5M_NOCLAYOUTLIN pdf file.rtf #prints the given file to pdf
-	printLO5M_NOCLAYOUTLIN() { unset SAL_USE_COMMON_LAYOUT; $LO5M_NOCLAYOUTLINPROG --headless --convert-to pdf $1 &> /dev/null; }
+    verLOMASTER() { $LOMASTERPROG --version | awk '{print $3;}' | xargs echo -n; }
+	convLOMASTER() { $LOMASTERPROG --headless --convert-to $1 $2 &> /dev/null; }
+	sourceLOMASTER() { echo "odt"; }
+	targetLOMASTER() { echo "rtf docx doc"; }
+	#usage: printLOMASTER pdf file.rtf #prints the given file to pdf
+	printLOMASTER() { $LOMASTERPROG --headless --convert-to pdf $1 &> /dev/null; }
 fi
 
 if [ -x "$LO5MMACPROG" ]
@@ -313,30 +296,6 @@ then
 	printLO5MMAC() { $LO5MMACPROG --headless --convert-to pdf $1 &> /dev/null; }
 fi
 
-if [ -x "$LO5M_CLAYOUTMACPROG" ]
-then
-	canconvertLO5M_CLAYOUTMAC=1	# we can convert from source type to target types
-	canprintLO5M_CLAYOUTMAC=1		# we can print to pdf
-	#usage: convLO5M_CLAYOUTMAC docx file.odf #converts the given file to docx
-	convLO5M_CLAYOUTMAC() { $LO5M_CLAYOUTMACPROG --headless --convert-to $1 $2 &> /dev/null; }
-	sourceLO5M_CLAYOUTMAC() { echo "odt"; }
-	targetLO5M_CLAYOUTMAC() { echo "rtf docx doc"; }
-	#usage: printLO5M_CLAYOUTMAC pdf file.rtf #prints the given file to pdf
-	printLO5M_CLAYOUTMAC() { $LO5M_CLAYOUTMACPROG --headless --convert-to pdf $1 &> /dev/null; }
-fi
-
-if [ -x "$LO5M_NOCLAYOUTMACPROG" ]
-then
-	canconvertLO5M_NOCLAYOUTMAC=1	# we can convert from source type to target types
-	canprintLO5M_NOCLAYOUTMAC=1		# we can print to pdf
-	#usage: convLO5M_NOCLAYOUTMAC docx file.odf #converts the given file to docx
-	convLO5M_NOCLAYOUTMAC() { $LO5M_NOCLAYOUTMACPROG --headless --convert-to $1 $2 &> /dev/null; }
-	sourceLO5M_NOCLAYOUTMAC() { echo "odt"; }
-	targetLO5M_NOCLAYOUTMAC() { echo "rtf docx doc"; }
-	#usage: printLO5M_NOCLAYOUTMAC pdf file.rtf #prints the given file to pdf
-	printLO5M_NOCLAYOUTMAC() { $LO5M_NOCLAYOUTMACPROG --headless --convert-to pdf $1 &> /dev/null; }
-fi
-
 if [ -x "$LO5MWINPROG" ]
 then
 	canconvertLO5MWIN=1	# we can convert from source type to target types
@@ -347,30 +306,6 @@ then
 	targetLO5MWIN() { echo "rtf docx doc"; }
 	#usage: printLO5MWIN pdf file.rtf #prints the given file to pdf
 	printLO5MWIN() { $LO5MWINPROG --headless --convert-to pdf $1 &> /dev/null; }
-fi
-
-if [ -x "$LO5M_CLAYOUTWINPROG" ]
-then
-	canconvertLO5M_CLAYOUTWIN=1	# we can convert from source type to target types
-	canprintLO5M_CLAYOUTWIN=1		# we can print to pdf
-	#usage: convLO5M_CLAYOUTWIN docx file.odf #converts the given file to docx
-	convLO5M_CLAYOUTWIN() { export SAL_USE_COMMON_LAYOUT=1; $LO5M_CLAYOUTWINPROG --headless --convert-to $1 $2 &> /dev/null; }
-	sourceLO5M_CLAYOUTWIN() { echo "odt"; }
-	targetLO5M_CLAYOUTWIN() { echo "rtf docx doc"; }
-	#usage: printLO5M_CLAYOUTWIN pdf file.rtf #prints the given file to pdf
-	printLO5M_CLAYOUTWIN() { export SAL_USE_COMMON_LAYOUT=1; $LO5M_CLAYOUTWINPROG --headless --convert-to pdf $1 &> /dev/null; }
-fi
-
-if [ -x "$LO5M_NOCLAYOUTWINPROG" ]
-then
-	canconvertLO5M_NOCLAYOUTWIN=1	# we can convert from source type to target types
-	canprintLO5M_NOCLAYOUTWIN=1		# we can print to pdf
-	#usage: convLO5M_NOCLAYOUTWIN docx file.odf #converts the given file to docx
-	convLO5M_NOCLAYOUTWIN() { unset SAL_USE_COMMON_LAYOUT; $LO5M_NOCLAYOUTWINPROG --headless --convert-to $1 $2 &> /dev/null; }
-	sourceLO5M_NOCLAYOUTWIN() { echo "odt"; }
-	targetLO5M_NOCLAYOUTWIN() { echo "rtf docx doc"; }
-	#usage: printLO5M_NOCLAYOUTWIN pdf file.rtf #prints the given file to pdf
-	printLO5M_NOCLAYOUTWIN() { unset SAL_USE_COMMON_LAYOUT; $LO5M_NOCLAYOUTWINPROG --headless --convert-to pdf $1 &> /dev/null; }
 fi
 
 # git master
@@ -464,7 +399,7 @@ then
 	convMSWINE() { $WINEPROG OfficeConvert --format=$1 $2; }
 	sourceMSWINE() { echo "docx"; }
 	targetMSWINE() { echo "rtf odt doc"; }
-	printMSWINE() { $WINEPROG OfficeConvert --format=pdf $1; }
+	printMSWINE() { timeout 30s $WINEPROG OfficeConvert --format=$1 $2; }
 fi
 
 #Microsoft Office 2013

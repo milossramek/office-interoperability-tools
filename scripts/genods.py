@@ -9,6 +9,7 @@
 import sys, os, getopt 
 import csv
 import numpy as np
+
 try:
     import ipdb
 except ImportError:
@@ -18,15 +19,17 @@ from odf.style import Style, TextProperties, ParagraphProperties, TableColumnPro
 from odf.text import P, A
 from odf.table import Table, TableColumn, TableRow, TableCell
 from odf.office import Annotation
+from collections import defaultdict
 
 PWENC = "utf-8"
 
 progdesc='Derive some results from pdf tests'
 
 def usage(desc):
-    print sys.argv[0]+':',  desc, ofname, ifname,rfname, tm1roundtrip, tm1print
+    print sys.argv[0]+':',  desc, ofname, ifname, ifname2, rfname, tm1roundtrip, tm1print
     print "Usage: ", sys.argv[0], "[options]"
-    print "\t-i infile.csv ... ..... report {default: "+ifname+"}"
+    print "\t-1 infile.csv ... ..... report {default: "+ifname+"}"
+    print "\t-2 infile.csv ... ..... report {default: "+ifname2+"}"
     print "\t-o outfile.csv ........ report {default: "+ofname+"}"
     print "\t-r rankfile.csv ....... document ranking"
     print "\t-t tagMax1-roundtrip.csv . document tags"
@@ -38,9 +41,9 @@ def usage(desc):
     print "\t-h .................... this usage"
 
 def parsecmd(desc):
-    global verbose, useapps, ofname, ifname, lpath, rfname, showalllinks, tm1print, tm1roundtrip
+    global verbose, useapps, ofname, ifname, ifname2, lpath, rfname, showalllinks, tm1print, tm1roundtrip
     try:
-        opts, Names = getopt.getopt(sys.argv[1:], "hvli:o:a:p:r:t:n:", ["help", "verbose"])
+        opts, Names = getopt.getopt(sys.argv[1:], "hvl:o:a:p:r:1:2:t:n:", ["help", "verbose"])
     except getopt.GetoptError as err:
         # print help information and exit:
         print str(err) # will print something like "option -a not recognized"
@@ -54,8 +57,10 @@ def parsecmd(desc):
             sys.exit()
         elif o in ("-o"):
             ofname = a
-        elif o in ("-i"):
+        elif o in ("-1"):
             ifname = a
+        elif o in ("-2"):
+            ifname2 = a
         elif o in ("-t"):
              tm1roundtrip= a
         elif o in ("-n"):
@@ -127,6 +132,9 @@ def loadTags(csvfile):
 def valToGrade(data):
         """ get grade for individual observed measures
         """
+	if not data or not data[0] or data[0] == ' ':
+            return [6,6,6,6]
+
         global FDEMax, HLPEMax, THEMax, LNDMax
         if data[-1] == "empty":
             return [6,6,6,6]
@@ -196,6 +204,7 @@ def getRsltTable(testType):
         for i in range(len(testLabels)-1):
             table.addElement(TableColumn(stylename=valColStyle))
             table.addElement(TableColumn(stylename=linkColStyle))
+        table.addElement(TableColumn(stylename=rankColStyle))
         table.addElement(TableColumn(stylename=linkColStyle))
     table.addElement(TableColumn(stylename=rankColStyle))
     table.addElement(TableColumn(stylename=tagColStyle))
@@ -265,6 +274,8 @@ def getRsltTable(testType):
             tr.addElement(tc)
         tc = TableCell(stylename="Csepstyle")
         tr.addElement(tc)
+        tc = TableCell(stylename="THstyle")
+        tr.addElement(tc)
         #tc = TableCell(stylename="THstyle")
         #tr.addElement(tc)
         #p = P(stylename=tablecontents,text=unicode("Views",PWENC))
@@ -278,6 +289,29 @@ def getRsltTable(testType):
             tc.addElement(p)
 
     for testcase in values.keys():
+
+        try:
+            agrades = np.array([valToGrade(values[testcase][a][1:]) for a in targetAppsSel])
+            lastgrade=agrades[-1]
+            maxgrade=agrades.max(axis=0)
+            mingrade=agrades.min(axis=0)
+        except KeyError:
+            # In case a testcase is in the first csv but not in the second one
+            continue
+
+        #identify regressions and progressions
+        progreg='x'
+
+        #ipdb.set_trace()
+        if (lastgrade>mingrade).any():  #We have regression
+            progreg=str(sum(lastgrade-mingrade))
+        else:
+            progreg=str(sum(lastgrade-maxgrade))
+
+        if int(progreg) >= 0 and not np.array_equal(agrades[0], [7,7,7,7]) \
+                and not np.array_equal(agrades[0], [6,6,6,6]):
+            continue
+
         #testcase=testcase.split('/')[1]
         tr = TableRow()
         table.addElement(tr)
@@ -288,18 +322,7 @@ def getRsltTable(testType):
         link = A(type="simple",href="%s%s"%(lpath,testcase), text=testcase)
         p.addElement(link)
         tc.addElement(p)
-        #identify regressions and progressions
-        progreg='x'
-        #mgrades = [sum(valToGrade(values[testcase][a][1:])) for a in targetAppsSel] 
-        agrades = np.array([valToGrade(values[testcase][a][1:]) for a in targetAppsSel])
-        lastgrade=agrades[-1]
-        maxgrade=agrades.max(axis=0)
-        mingrade=agrades.min(axis=0)
-        #ipdb.set_trace()
-        if (lastgrade>mingrade).any():  #We have regression
-            progreg=str((lastgrade-mingrade).max())
-        else:
-            progreg=str((lastgrade-maxgrade).min())
+
         tc = TableCell(valuetype="float", value=progreg)
         tr.addElement(tc)
         #p = P(stylename=tablecontents,text=unicode(progreg,PWENC))
@@ -327,13 +350,17 @@ def getRsltTable(testType):
             #print grades
             viewTypes=['s','p','l','z']
             app, ttype = a.split()
+            subapp = app.split('-')[0]
+            
             #create pdf path
             #ipdb.set_trace()
             filename=testcase.split("/",1)[-1]  # get subdirectories, too
+            
             if ttype=="roundtrip":
-                pdfpath=lpath+app+"/"+filename+"-pair"
+                pdfpath=app+"/"+filename+"-pair"
             else:
-                pdfpath=lpath+app+"/"+filename+"."+app+"-pair"
+                pdfpath=app+"/"+filename+"."+subapp+"-pair"
+            pdfPathInDoc = lpath + pdfpath
             for (grade, viewType) in zip(reversed(grades), viewTypes):   # we do not show the PPOI value
                 if max(grades) > 1:
                     tc = TableCell(valuetype="float", value=str(grade), stylename='C'+str(int(grade))+'style')
@@ -343,12 +370,49 @@ def getRsltTable(testType):
                 tc = TableCell(stylename="THstyle")
                 tr.addElement(tc)
                 p = P(stylename=tablecontents,text=unicode("",PWENC))
-                link = A(type="simple",href=pdfpath+"-%s.pdf"%viewType, text=">")
-                if showalllinks or a==targetAppsSel[-1]:
-                    p.addElement(link)
-                tc.addElement(p)
-            tc = TableCell(stylename="Csepstyle")
+                if os.path.exists(pdfpath + '-' + viewType + '.pdf'):
+                    link = A(type="simple",href=pdfPathInDoc+"-%s.pdf"%viewType, text=">")
+                    if showalllinks or a==targetAppsSel[-1]:
+                        p.addElement(link)
+                    tc.addElement(p)
+            tc = TableCell(stylename="THstyle")
+
+            sumall = sum(valToGrade(values[testcase][a][1:]))
+            if grades == [7,7,7,7]:
+                p = P(stylename=tablecontents,text=unicode("timeout",PWENC))
+                if testType == "roundtrip":
+                    gradesPrint = valToGrade(values[testcase][a.replace(testType, 'print')][1:])
+                    if gradesPrint != [7,7,7,7]:
+                        p = P(stylename=tablecontents,text=unicode("corrupted",PWENC))
+            elif grades == [6,6,6,6]:
+                p = P(stylename=tablecontents,text=unicode("empty",PWENC))
+            elif sumall <= 8:
+                if testType == "print":
+                    goodDocuments.append(testcase)
+                    p = P(stylename=tablecontents,text=unicode("good import",PWENC))
+                elif testType == "roundtrip":
+                    if testcase in goodDocuments:
+                        p = P(stylename=tablecontents,text=unicode("good import, good export",PWENC))
+                    elif testcase in badDocuments:
+                        p = P(stylename=tablecontents,text=unicode("bad import, good export",PWENC))
+            elif sumall <= 20:
+                if testType == "roundtrip":
+                    if testcase in goodDocuments:
+                        p = P(stylename=tablecontents,text=unicode("good import, bad export",PWENC))
+                        badDocuments.append(testcase)
+                    elif testcase in badDocuments:
+                        p = P(stylename=tablecontents,text=unicode("bad import, bad export",PWENC))
+                elif testType == "print":
+                    badDocuments.append(testcase)
+                    p = P(stylename=tablecontents,text=unicode("bad import",PWENC))
+            else:
+                p = P(stylename=tablecontents,text=unicode("",PWENC))
+
+            tc.addElement(p)
             tr.addElement(tc)
+            tc = TableCell(stylename="THstyle")
+            tr.addElement(tc)
+
         if ranks:
             rankinfo = ranks[testcase.split('/')[-1]]
             #tc = TableCell(valuetype="float", value=str("%.3f"%float(rankinfo[0])))
@@ -387,6 +451,7 @@ useapps=None
 showalllinks=True
 
 ifname= 'all.csv'
+ifname2= 'all.csv'
 ofname= 'rslt.ods'
 rfname= None
 tm1roundtrip= None
@@ -412,6 +477,17 @@ lpath = '../'
 parsecmd(progdesc)
 if lpath[-1] != '/': lpath = lpath+'/'
 targetApps, testLabels, values = loadCSV(ifname)
+targetApps2, testLabels2, values2 = loadCSV(ifname2)
+targetApps = targetApps + targetApps2
+testLabels = testLabels + testLabels2
+
+result = defaultdict(dict)
+for d in values, values2:
+    for k, v in d.iteritems():
+        result[k].update(v)
+
+values = result
+
 ranks= None
 if rfname:
     ranks=loadRanks(rfname)
@@ -511,6 +587,8 @@ rankCellStyle = Style(name="rankCellStyle",family="table-cell", parentstylename=
 rankCellStyle.addElement(ParagraphProperties(textalign="center"))
 textdoc.styles.addElement(rankCellStyle)
 
+goodDocuments = []
+badDocuments = []
 table = getRsltTable("print")
 textdoc.spreadsheet.addElement(table)
 table = getRsltTable("roundtrip")

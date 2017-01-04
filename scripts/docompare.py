@@ -108,9 +108,9 @@ def pdf2array(pdffile, res=300):
 	os.system(cmd)
 	if not os.path.exists(tname): return None, None
         imgfile = TiffFile(tname)
-        pages = [p.asarray() for p in imgfile.pages[:3]]    # first three pages only
+        pages = [p.asarray() for p in imgfile.pages[:5]]    # first five pages only
 
-        shapes = [p.shape for p in imgfile.pages[:3]]
+        shapes = [p.shape for p in imgfile.pages[:5]]
         os.remove(tname)
         return pages, shapes
 

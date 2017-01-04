@@ -1,10 +1,10 @@
 #!/bin/bash
 #set -o xtrace #be verbose
 
-. config.sh
+. $FTPATH/officeconf.sh
 
-dpi=600		#dpi to render pdfs
-threshold=250	#threshold to identify foreground
+dpi=400		#dpi to render pdfs
+threshold=166	#threshold to identify foreground
 
 function usage
 {
@@ -20,31 +20,33 @@ function cmp ()
 {
 	#echo 1 $1
 	refpdf=`basename $1` 	#source document with suffix
+    refpdf=${refpdf//$2.}   #Remove $app from file name
 	refpdfn=`basename $refpdf .pdf`	#source document without suffix
-	#echo refpdf $refpdf
 	ddd=`dirname $1`
 	subdir=${ddd/\.\//}	# nice subdir path
-	#echo subdir $subdir
-	spdf=$sourcedir/$subdir/$refpdf	#source document with nice path
-	#echo spdf $spdf
-	tpdf=$2/$subdir/$refpdfn	#target document with nice path without suffix
-	#echo tpdf $tpdf
+	spdf=$sourceapp/$subdir/$refpdf	#source document with nice path
+	tpdf=$4/$subdir/$refpdfn	#target document with nice path without suffix
 	
-	#if [ ! -e "${tpdf}-pair-l.pdf" ];
 	if [ ! -e "${tpdf}-pair-l.pdf" ] || [ "${tpdf}-pair-l.pdf" -ot "$spdf" ];
 	then
-		echo Creating pairs for  $tpdf
-		docompare.py -t $threshold -d $dpi -a -o $tpdf-pair $spdf $tpdf.pdf 2>/dev/null &
-	#else
-		#echo Pairs up-to-date for $tpdf
-	fi
-	#if [ ! -e "${tpdf}.$2-pair-l.pdf" ];
-	if [ ! -e "${tpdf}.$2-pair-l.pdf" ] || [ "${tpdf}.$2-pair-l.pdf" -ot "$spdf" ];
-	then
-		echo Creating pairs for  $tpdf.$2
-		docompare.py -t $threshold -d $dpi -a -o $tpdf.$2-pair $spdf $tpdf.$2.pdf 2>/dev/null
-	#else
-		##echo Pairs up-to-date for $tpdf.$2
+		echo $3 - Creating pairs for  $tpdf
+		time timeout 120s  docompare.py -t $threshold -d $dpi -a -o $tpdf-pair $spdf $tpdf.pdf 2>/dev/null
+
+	    if [ ! -e "${tpdf}-pair-l.pdf" ] || [ "${tpdf}-pair-l.pdf" -ot "$spdf" ];
+	    then
+            rm /tmp/*.tif
+        fi
+
+        if [ ! -e "${tpdf}.$2-pair-l.pdf" ] || [ "${tpdf}.$2-pair-l.pdf" -ot "$spdf" ];
+        then
+	        echo $3 - Creating pairs for  $tpdf.$2
+	        time timeout 120s docompare.py -t $threshold -d $dpi -a -o $tpdf.$2-pair $spdf $tpdf.$2.pdf 2>/dev/null
+
+            if [ ! -e "${tpdf}.$2-pair-l.pdf" ] || [ "${tpdf}.$2-pair-l.pdf" -ot "$spdf" ];
+            then
+                rm /tmp/*.tif
+            fi
+        fi
 	fi
 }
 
@@ -73,12 +75,8 @@ while true ; do
 done
 shift $(expr $OPTIND - 1 )
 
-#get list of source pdfs. We assume the same structure and files in the target directories
 # file names: bullets.docx.pdf
-cd $sourcedir
-pdfs=`find . -name \*.pdf|grep -v pair|sort -n -k 1.7,1.9`
-cd ..
-echo $pdfs
+
 
 if [[ $# -gt 0 ]] 
 then
@@ -87,7 +85,8 @@ then
 		if [ -d "$1" ]; then
   			echo Processing $1
 			#for pdfdoc in $pdfs; do cmp `basename $pdfdoc` $1; done
-			for pdfdoc in $pdfs; do cmp $pdfdoc $1; done
+			count=0
+			for pdfdoc in $pdfs; do ((count++)); cmp $pdfdoc $1 $count; done
 		else
   			echo Directory $1 does not exist
 		fi
@@ -97,6 +96,11 @@ else
 	for app in `echo $rtripapps`; do
   		echo Processing $app
 		#for pdfdoc in $pdfs; do cmp `basename $pdfdoc` $app; done
-		for pdfdoc in $pdfs; do cmp $pdfdoc $app; done
+        folder=$app'-'$(ver$app)
+        cd $folder
+        pdfs=`find . -name \*.pdf|grep -v pair|sort -n -k 1.7,1.9`
+        cd ..
+		count=0
+		for pdfdoc in $pdfs; do ((count++)); cmp $pdfdoc $app $count $folder; done
 	done
 fi
